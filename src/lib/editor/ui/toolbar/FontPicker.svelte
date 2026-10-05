@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronDown, Search } from '@lucide/svelte';
+	import { ChevronDown, Search } from '#lib/icons.ts';
 	import { listFonts, previewFont, type FontInfo } from '../../canvas/fonts';
 	import Pop from '../widgets/Pop.svelte';
 

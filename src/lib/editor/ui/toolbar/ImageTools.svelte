@@ -8,7 +8,7 @@
 		Wand2,
 		Undo2,
 		LoaderCircle
-	} from '@lucide/svelte';
+	} from '#lib/icons.ts';
 	import { getEditor } from '../../context';
 	import type { ImageElement, ImageFilters } from '../../model/types';
 	import ColorPicker from '../widgets/ColorPicker.svelte';

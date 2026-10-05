@@ -17,7 +17,7 @@ export interface CropSession {
 	destroy(): void;
 }
 
-const BRAND = '#8b3dff';
+const BRAND = '#c2553a';
 
 /**
  * Canva-style crop mode, drawn in element-local coordinates (so rotated images
@@ -59,7 +59,7 @@ export function startCrop(
 		flipEnabled: false,
 		ignoreStroke: true,
 		borderEnabled: false,
-		anchorSize: 14,
+		anchorSize: 11,
 		anchorStroke: BRAND,
 		anchorFill: '#ffffff',
 		anchorCornerRadius: 3,

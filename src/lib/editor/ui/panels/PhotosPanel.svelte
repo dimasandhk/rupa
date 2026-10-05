@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle, Search } from '@lucide/svelte';
+	import { LoaderCircle, Search } from '#lib/icons.ts';
 	import { loadImage } from '../../canvas/images';
 	import { getEditor } from '../../context';
 	import { addImage } from '../../insert';

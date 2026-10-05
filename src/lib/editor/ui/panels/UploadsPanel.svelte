@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CloudUpload, LoaderCircle } from '@lucide/svelte';
+	import { CloudUpload, LoaderCircle } from '#lib/icons.ts';
 	import { listUploads, type UploadedImage } from '#lib/api.ts';
 	import { getEditor } from '../../context';
 	import { addImage, addImageFile } from '../../insert';

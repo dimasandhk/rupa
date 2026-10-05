@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { LoaderCircle, Search } from '@lucide/svelte';
+	import { LoaderCircle, Search } from '#lib/icons.ts';
+	import { svgToDataUrl } from '../../canvas/images';
 	import { POLYGONS, PATHS, SHAPE_LABELS } from '../../canvas/shapes';
 	import { getEditor } from '../../context';
 	import { addIcon, addLine, addShape } from '../../insert';
@@ -20,12 +21,37 @@
 		return `<polygon points="${coords.join(' ')}"/>`;
 	}
 
-	// ---- Icons via the Iconify API (100k+ open-source icons, no key needed)
+	// ---- Icons via the Iconify API (100k+ open-source icons, no key needed).
+	// Icon data is fetched in bulk per icon set (one request per prefix, not per
+	// icon) and turned into SVG locally, which keeps us well under rate limits.
+	interface Graphic {
+		name: string;
+		svg: string;
+	}
+	interface IconSet {
+		width?: number;
+		height?: number;
+		icons: Record<
+			string,
+			{ body: string; width?: number; height?: number; left?: number; top?: number }
+		>;
+		aliases?: Record<string, { parent: string }>;
+	}
+
 	let query = $state('');
-	let icons = $state<string[]>([]);
+	let icons = $state<Graphic[]>([]);
 	let loading = $state(false);
 	let error = $state('');
+	const API = 'https://api.iconify.design';
 	const COLLECTIONS = 'mdi,ph,tabler,lucide,fluent-emoji-flat,noto,twemoji,logos';
+
+	function toSvg(set: IconSet, name: string): string | undefined {
+		const icon = set.icons[name] ?? set.icons[set.aliases?.[name]?.parent ?? ''];
+		if (!icon) return;
+		const w = icon.width ?? set.width ?? 16;
+		const h = icon.height ?? set.height ?? 16;
+		return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="${icon.left ?? 0} ${icon.top ?? 0} ${w} ${h}">${icon.body}</svg>`;
+	}
 
 	async function search(q: string) {
 		if (!q.trim()) return;
@@ -33,22 +59,34 @@
 		error = '';
 		try {
 			const res = await fetch(
-				`https://api.iconify.design/search?query=${encodeURIComponent(q.trim())}&limit=96&prefixes=${COLLECTIONS}`
+				`${API}/search?query=${encodeURIComponent(q.trim())}&limit=64&prefixes=${COLLECTIONS}`
 			);
-			const body = await res.json();
-			icons = body.icons ?? [];
-			if (!icons.length) error = 'No graphics found';
+			const names: string[] = (await res.json()).icons ?? [];
+			const byPrefix = new Map<string, string[]>();
+			for (const full of names) {
+				const [prefix, name] = full.split(':');
+				byPrefix.set(prefix, [...(byPrefix.get(prefix) ?? []), name]);
+			}
+			const sets = new Map<string, IconSet>();
+			await Promise.all(
+				[...byPrefix].map(async ([prefix, list]) => {
+					const r = await fetch(`${API}/${prefix}.json?icons=${list.join(',')}`);
+					if (r.ok) sets.set(prefix, await r.json());
+				})
+			);
+			icons = names.flatMap((full) => {
+				const [prefix, name] = full.split(':');
+				const set = sets.get(prefix);
+				const svg = set && toSvg(set, name);
+				return svg ? [{ name: full, svg }] : [];
+			});
+			if (!icons.length)
+				error = names.length ? 'The icon library is busy. Try again shortly.' : 'No graphics found';
 		} catch {
 			error = 'Could not reach the icon library';
 		} finally {
 			loading = false;
 		}
-	}
-
-	async function insertIcon(name: string) {
-		const [prefix, id] = name.split(':');
-		const res = await fetch(`https://api.iconify.design/${prefix}/${id}.svg?width=256&height=256`);
-		addIcon(editor, await res.text());
 	}
 
 	$effect(() => {
@@ -126,17 +164,16 @@
 			<p class="py-4 text-center text-sm text-muted">{error}</p>
 		{:else}
 			<div class="grid grid-cols-4 gap-2">
-				{#each icons as name (name)}
+				{#each icons as icon (icon.name)}
 					<button
-						class="grid aspect-square place-items-center rounded-lg p-2 hover:bg-gray-100"
-						title={name}
-						onclick={() => insertIcon(name)}
+						class="grid aspect-square place-items-center rounded-lg p-2 transition hover:bg-gray-100 active:scale-95"
+						title={icon.name}
+						onclick={() => addIcon(editor, icon.svg)}
 					>
 						<img
-							src="https://api.iconify.design/{name.replace(':', '/')}.svg?height=48"
-							alt={name}
+							src={svgToDataUrl(icon.svg, '#1f1b17')}
+							alt={icon.name.split(':')[1].replaceAll('-', ' ')}
 							class="size-10"
-							loading="lazy"
 						/>
 					</button>
 				{/each}

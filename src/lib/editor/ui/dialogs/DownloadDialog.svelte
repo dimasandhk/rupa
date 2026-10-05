@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Download, LoaderCircle } from '@lucide/svelte';
+	import { Download, LoaderCircle } from '#lib/icons.ts';
 	import { exportDesign, type ExportFormat } from '../../canvas/download';
 	import { getEditor } from '../../context';
 	import Pop from '../widgets/Pop.svelte';
@@ -38,14 +38,8 @@
 	];
 </script>
 
-<Pop
-	title="Download"
-	bind:open
-	triggerClass="btn bg-white text-ink hover:bg-white/90"
-	width={320}
-	align="end"
->
-	{#snippet trigger()}<Download class="size-4" /> Download{/snippet}
+<Pop title="Export" bind:open triggerClass="btn-primary" width={320} align="end">
+	{#snippet trigger()}<Download class="size-4" /> Export{/snippet}
 	<div class="space-y-4">
 		<div>
 			<div class="panel-title">File type</div>

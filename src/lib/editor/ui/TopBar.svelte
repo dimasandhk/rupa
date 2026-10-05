@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Cloud, CloudAlert, CloudUpload, House, Play, Redo2, Undo2 } from '@lucide/svelte';
+	import { Cloud, CloudAlert, CloudUpload, Play, Redo2, Undo2 } from '#lib/icons.ts';
+	import Wordmark from '#lib/ui/Wordmark.svelte';
 	import { getEditor } from '../context';
 	import type { Autosave } from '../state/autosave.svelte';
 	import DownloadDialog from './dialogs/DownloadDialog.svelte';
@@ -9,54 +10,61 @@
 	const editor = getEditor();
 
 	const STATUS = {
-		saved: { label: 'All changes saved', icon: Cloud },
-		saving: { label: 'Saving…', icon: CloudUpload },
-		unsaved: { label: 'Unsaved changes', icon: CloudUpload },
-		error: { label: 'Saving failed — retrying', icon: CloudAlert },
-		conflict: { label: 'Edited elsewhere — reload', icon: CloudAlert }
+		saved: { label: 'All changes saved', short: 'Saved', icon: Cloud },
+		saving: { label: 'Saving…', short: 'Saving', icon: CloudUpload },
+		unsaved: { label: 'Unsaved changes', short: 'Editing', icon: CloudUpload },
+		error: { label: 'Saving failed, retrying', short: 'Retrying', icon: CloudAlert },
+		conflict: { label: 'Edited somewhere else', short: 'Conflict', icon: CloudAlert }
 	};
 	const status = $derived(STATUS[autosave.status]);
 	const StatusIcon = $derived(status.icon);
+	const problem = $derived(autosave.status === 'error' || autosave.status === 'conflict');
 </script>
 
-<header
-	class="flex h-14 shrink-0 items-center gap-1 bg-gradient-to-r from-[#00c4cc] via-[#6a5cff] to-[#8b3dff] px-3 text-white"
->
-	<a href="/" class="btn text-white hover:bg-white/15" title="Home"><House class="size-4" /> Home</a
-	>
-	<ResizeDialog {onerror} beforecopy={() => autosave.flush()} />
-	<div class="mx-1 h-6 w-px bg-white/30"></div>
-	<button
-		class="icon-btn text-white hover:bg-white/15"
-		title="Undo (Ctrl+Z)"
-		disabled={!editor.canUndo}
-		onclick={() => editor.undo()}><Undo2 class="size-4" /></button
-	>
-	<button
-		class="icon-btn text-white hover:bg-white/15"
-		title="Redo (Ctrl+Shift+Z)"
-		disabled={!editor.canRedo}
-		onclick={() => editor.redo()}><Redo2 class="size-4" /></button
-	>
-	<button
-		class="icon-btn text-white hover:bg-white/15"
-		class:text-yellow-200={autosave.status === 'error' || autosave.status === 'conflict'}
-		title={autosave.error ?? status.label}
-		aria-label={status.label}
-		onclick={() => (autosave.status === 'conflict' ? location.reload() : autosave.flush())}
-	>
-		<StatusIcon class="size-4" />
-	</button>
-
+<header class="flex h-14 shrink-0 items-center gap-2 px-3">
+	<Wordmark size="sm" />
+	<span class="text-line select-none" aria-hidden="true">/</span>
 	<input
-		class="ml-auto h-9 w-64 truncate rounded-lg bg-transparent px-2 text-right text-sm font-medium text-white outline-none placeholder:text-white/70 hover:bg-white/15 focus:bg-white focus:text-left focus:text-ink"
+		class="field-sizing-content h-8 max-w-72 min-w-24 truncate rounded-lg bg-transparent px-2 text-sm font-medium transition outline-none placeholder:text-muted hover:bg-ink/[0.05] focus:bg-white focus:ring-2 focus:ring-brand/30"
 		bind:value={editor.title}
 		placeholder="Untitled design"
 		aria-label="Design title"
 		maxlength="200"
 		onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
 	/>
-	<a href="/design/{editor.id}/present" class="btn text-white hover:bg-white/15" title="Present">
+	<button
+		class="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs transition hover:bg-ink/[0.05] {problem
+			? 'text-brand'
+			: 'text-muted'}"
+		title={autosave.error ?? status.label}
+		aria-label={status.label}
+		onclick={() => (autosave.status === 'conflict' ? location.reload() : autosave.flush())}
+	>
+		<StatusIcon class="size-3.5" />
+		{status.short}
+	</button>
+
+	<div class="mx-auto flex items-center gap-0.5">
+		<button
+			class="icon-btn"
+			title="Undo (Ctrl+Z)"
+			disabled={!editor.canUndo}
+			onclick={() => editor.undo()}
+		>
+			<Undo2 class="size-[18px]" />
+		</button>
+		<button
+			class="icon-btn"
+			title="Redo (Ctrl+Shift+Z)"
+			disabled={!editor.canRedo}
+			onclick={() => editor.redo()}
+		>
+			<Redo2 class="size-[18px]" />
+		</button>
+	</div>
+
+	<ResizeDialog {onerror} beforecopy={() => autosave.flush()} />
+	<a href="/design/{editor.id}/present" class="btn-ghost" title="Present">
 		<Play class="size-4" /> Present
 	</a>
 	<DownloadDialog {onerror} />

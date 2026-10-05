@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
+	import Wordmark from '#lib/ui/Wordmark.svelte';
 	import type { PageProps } from './$types';
 
 	let { form }: PageProps = $props();
@@ -8,70 +9,122 @@
 	let mode = $state<'signin' | 'signup'>(
 		(form?.mode ?? page.url.searchParams.get('mode')) === 'signup' ? 'signup' : 'signin'
 	);
+	let pending = $state(false);
 </script>
 
-<svelte:head><title>Sign in · Rupa</title></svelte:head>
+<svelte:head><title>{mode === 'signin' ? 'Log in' : 'Sign up'} · Rupa</title></svelte:head>
 
-<main
-	class="grid min-h-full place-items-center bg-gradient-to-br from-[#00c4cc] via-[#6a5cff] to-[#8b3dff] p-6"
->
-	<div class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
-		<div class="mb-6 text-center">
-			<div class="text-3xl font-extrabold tracking-tight text-brand">Rupa</div>
-			<p class="mt-1 text-sm text-muted">
-				{mode === 'signin' ? 'Log in to keep designing' : 'Create an account to start designing'}
+<main class="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
+	<!-- Editorial side: a small composed "artboard" instead of a stock gradient. -->
+	<section
+		class="relative hidden overflow-hidden canvas-dots lg:flex lg:flex-col lg:justify-between lg:p-12"
+	>
+		<Wordmark size="lg" />
+		<div class="relative mx-auto my-10 h-[22rem] w-full max-w-md" aria-hidden="true">
+			<div
+				class="absolute inset-x-10 top-6 bottom-0 -rotate-3 rounded-md bg-white shadow-page"
+			></div>
+			<div class="absolute inset-x-10 top-6 bottom-0 rotate-2 rounded-md bg-white p-8 shadow-page">
+				<div class="size-24 rounded-full bg-brand"></div>
+				<div class="mt-6 h-3 w-3/4 rounded-full bg-ink"></div>
+				<div class="mt-2.5 h-3 w-1/2 rounded-full bg-ink/20"></div>
+				<p class="absolute right-8 bottom-7 font-display text-5xl text-ink italic">rupa</p>
+			</div>
+		</div>
+		<div>
+			<h1 class="max-w-[16ch] font-display text-5xl leading-[1.02] font-medium">
+				Give your ideas a shape.
+			</h1>
+			<p class="mt-4 max-w-[44ch] text-muted">
+				<em class="font-display">Rupa</em> is Sanskrit for form. Make posts, slides and posters in a design
+				studio you host yourself.
 			</p>
 		</div>
+	</section>
 
-		<form
-			method="post"
-			action={mode === 'signin' ? '?/signIn' : '?/signUp'}
-			use:enhance
-			class="space-y-3"
-		>
-			{#if mode === 'signup'}
-				<label class="block text-sm font-medium">
-					Name
-					<input name="name" class="mt-1 input" autocomplete="name" />
-				</label>
-			{/if}
-			<label class="block text-sm font-medium">
-				Email
-				<input
-					name="email"
-					type="email"
-					required
-					class="mt-1 input"
-					autocomplete="email"
-					defaultValue={form?.email ?? ''}
-				/>
-			</label>
-			<label class="block text-sm font-medium">
-				Password
-				<input
-					name="password"
-					type="password"
-					required
-					minlength="8"
-					class="mt-1 input"
-					autocomplete={mode === 'signin' ? 'current-password' : 'new-password'}
-				/>
-			</label>
-			{#if form?.message}
-				<p class="text-sm text-red-600" role="alert">{form.message}</p>
-			{/if}
-			<button class="btn-primary w-full">{mode === 'signin' ? 'Log in' : 'Sign up'}</button>
-		</form>
+	<section class="flex flex-col px-6 py-10 sm:px-12">
+		<div class="lg:hidden"><Wordmark /></div>
+		<div class="m-auto w-full max-w-sm py-10">
+			<h2 class="font-display text-4xl font-medium">
+				{mode === 'signin' ? 'Welcome back' : 'Make an account'}
+			</h2>
+			<p class="mt-2 text-muted">
+				{mode === 'signin'
+					? 'Log in to pick up where you left off.'
+					: 'It takes a minute. Your designs stay on this server.'}
+			</p>
 
-		<p class="mt-5 text-center text-sm text-muted">
-			{mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
-			<button
-				type="button"
-				class="font-medium text-brand hover:underline"
-				onclick={() => (mode = mode === 'signin' ? 'signup' : 'signin')}
+			<form
+				method="post"
+				action={mode === 'signin' ? '?/signIn' : '?/signUp'}
+				use:enhance={() => {
+					pending = true;
+					return async ({ update }) => {
+						await update();
+						pending = false;
+					};
+				}}
+				class="mt-8 space-y-4"
 			>
-				{mode === 'signin' ? 'Sign up' : 'Log in'}
-			</button>
-		</p>
-	</div>
+				{#if mode === 'signup'}
+					<label class="block text-sm font-medium">
+						Name
+						<input name="name" class="mt-1.5 input h-11" autocomplete="name" />
+					</label>
+				{/if}
+				<label class="block text-sm font-medium">
+					Email
+					<input
+						name="email"
+						type="email"
+						required
+						class="mt-1.5 input h-11"
+						autocomplete="email"
+						defaultValue={form?.email ?? ''}
+						aria-invalid={form?.message ? true : undefined}
+					/>
+				</label>
+				<label class="block text-sm font-medium">
+					Password
+					<input
+						name="password"
+						type="password"
+						required
+						minlength="8"
+						class="mt-1.5 input h-11"
+						autocomplete={mode === 'signin' ? 'current-password' : 'new-password'}
+						aria-describedby="password-hint"
+					/>
+					<span id="password-hint" class="mt-1.5 block text-xs font-normal text-muted"
+						>At least 8 characters.</span
+					>
+				</label>
+				{#if form?.message}
+					<p
+						class="rounded-lg border-l-2 border-brand bg-brand-50 px-3 py-2 text-sm text-brand-600"
+						role="alert"
+					>
+						{form.message}
+					</p>
+				{/if}
+				<button class="btn-primary h-11 w-full" disabled={pending}>
+					{#if pending}{mode === 'signin' ? 'Logging in…' : 'Creating account…'}{:else}{mode ===
+						'signin'
+							? 'Log in'
+							: 'Sign up'}{/if}
+				</button>
+			</form>
+
+			<p class="mt-6 text-sm text-muted">
+				{mode === 'signin' ? 'New to Rupa?' : 'Already have an account?'}
+				<button
+					type="button"
+					class="font-medium text-ink underline decoration-line underline-offset-4 hover:decoration-brand"
+					onclick={() => (mode = mode === 'signin' ? 'signup' : 'signin')}
+				>
+					{mode === 'signin' ? 'Sign up' : 'Log in'}
+				</button>
+			</p>
+		</div>
+	</section>
 </main>

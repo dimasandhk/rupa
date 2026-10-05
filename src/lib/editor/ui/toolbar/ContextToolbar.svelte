@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ImageOff } from '@lucide/svelte';
+	import { ImageOff } from '#lib/icons.ts';
 	import { getEditor } from '../../context';
 	import { setBackgroundColor } from '../../insert';
 	import type { ImageElement, TextElement } from '../../model/types';
@@ -20,48 +20,49 @@
 	const single = $derived(els.length === 1 ? els[0] : undefined);
 	const texts = $derived(types.size === 1 && types.has('text') ? (els as TextElement[]) : []);
 	const page = $derived(editor.activePage);
+	const hasTypeTools = $derived(texts.length > 0 || (!!single && single.type !== 'group'));
 </script>
 
-<div
-	class="flex h-14 shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-white px-3"
-	role="toolbar"
-	aria-label="Element tools"
->
-	{#if editor.cropId}
-		<span class="text-sm font-medium">Crop</span>
-		<span class="text-sm text-muted"
-			>Drag the photo to reposition it, or drag the handles to crop.</span
-		>
-		<div class="ml-auto flex gap-2">
+<!-- Floats over the canvas; only the pill itself catches pointer events. -->
+<div class="pointer-events-none absolute inset-x-3 top-3 z-20 flex justify-center">
+	<div
+		class="pointer-events-auto flex h-12 max-w-full items-center gap-0.5 overflow-x-auto rounded-2xl bg-white/95 px-1.5 shadow-float ring-1 ring-line backdrop-blur"
+		role="toolbar"
+		aria-label="Element tools"
+	>
+		{#if editor.cropId}
+			<span class="pl-2 text-sm font-medium">Cropping</span>
+			<span class="hidden px-2 text-sm text-muted md:inline"
+				>Drag the photo to reposition it, or pull the handles to crop.</span
+			>
 			<button class="btn-ghost" onclick={() => editor.endCrop(false)}>Cancel</button>
 			<button class="btn-primary" onclick={() => editor.endCrop(true)}>Done</button>
-		</div>
-	{:else if !els.length}
-		<ColorPicker
-			title="Background color"
-			value={page.background.color}
-			onchange={(c) => setBackgroundColor(editor, c)}
-		/>
-		<span class="text-sm text-muted">Background</span>
-		{#if page.background.image}
-			<button
-				class="btn-ghost"
-				onclick={() =>
-					editor.updatePage((p) => {
-						delete p.background.image;
-					})}><ImageOff class="size-4" /> Remove background image</button
-			>
-		{/if}
-	{:else}
-		{#if texts.length}
-			<TextTools els={texts} />
-		{:else if single?.type === 'image'}
-			<ImageTools el={single} {onremovebg} removing={removingId === single.id} />
-		{:else if single && (single.type === 'shape' || single.type === 'line' || single.type === 'icon')}
-			<ShapeTools el={single} />
-		{/if}
-		<div class="ml-auto flex items-center gap-1 pl-2">
+		{:else if !els.length}
+			<ColorPicker
+				title="Background color"
+				value={page.background.color}
+				onchange={(c) => setBackgroundColor(editor, c)}
+			/>
+			<span class="pr-2 text-sm text-muted">Page background</span>
+			{#if page.background.image}
+				<button
+					class="btn-ghost"
+					onclick={() =>
+						editor.updatePage((p) => {
+							delete p.background.image;
+						})}><ImageOff class="size-4" /> Remove image</button
+				>
+			{/if}
+		{:else}
+			{#if texts.length}
+				<TextTools els={texts} />
+			{:else if single?.type === 'image'}
+				<ImageTools el={single} {onremovebg} removing={removingId === single.id} />
+			{:else if single && (single.type === 'shape' || single.type === 'line' || single.type === 'icon')}
+				<ShapeTools el={single} />
+			{/if}
+			{#if hasTypeTools}<div class="mx-1 h-6 w-px shrink-0 bg-line" aria-hidden="true"></div>{/if}
 			<ArrangeTools />
-		</div>
-	{/if}
+		{/if}
+	</div>
 </div>

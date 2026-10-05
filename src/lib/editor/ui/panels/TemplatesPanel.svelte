@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle, Search } from '@lucide/svelte';
+	import { LoaderCircle, Search } from '#lib/icons.ts';
 	import { getEditor } from '../../context';
 	import type { DesignData } from '../../model/types';
 	import DesignThumb from '../widgets/DesignThumb.svelte';

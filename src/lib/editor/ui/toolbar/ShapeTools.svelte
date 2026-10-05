@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SquareDashed } from '@lucide/svelte';
+	import { SquareDashed } from '#lib/icons.ts';
 	import { getEditor } from '../../context';
 	import type { IconElement, LineElement, ShapeElement } from '../../model/types';
 	import ColorPicker from '../widgets/ColorPicker.svelte';

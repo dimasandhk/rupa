@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronDown, ChevronUp, Lock, LockOpen } from '@lucide/svelte';
+	import { ChevronDown, ChevronUp, Lock, LockOpen } from '#lib/icons.ts';
 	import { SHAPE_LABELS } from '../../canvas/shapes';
 	import { getEditor } from '../../context';
 	import type { Element } from '../../model/types';

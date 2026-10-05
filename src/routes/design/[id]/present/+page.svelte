@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { renderPage } from '#lib/editor/canvas/export.ts';
-	import { ChevronLeft, ChevronRight, Maximize, X } from '@lucide/svelte';
+	import { ChevronLeft, ChevronRight, Maximize, X } from '#lib/icons.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

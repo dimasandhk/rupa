@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Scaling } from '@lucide/svelte';
+	import { Scaling } from '#lib/icons.ts';
 	import { createDesign } from '#lib/api.ts';
 	import { PRESETS } from '#lib/presets.ts';
 	import { create } from 'mutative';
@@ -52,7 +52,7 @@
 	}
 </script>
 
-<Pop title="Resize" bind:open triggerClass="btn text-white hover:bg-white/15" width={340}>
+<Pop title="Resize" bind:open triggerClass="btn-ghost" width={340} align="end">
 	{#snippet trigger()}<Scaling class="size-4" /> Resize{/snippet}
 	<div class="panel-title">Resize design</div>
 	<div class="max-h-56 space-y-0.5 overflow-y-auto">

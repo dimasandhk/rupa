@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LayoutGrid, Maximize } from '@lucide/svelte';
+	import { LayoutGrid, Maximize, Minus, Plus } from '#lib/icons.ts';
 	import { getEditor } from '../context';
 
 	let {
@@ -9,39 +9,53 @@
 	}: { onzoom: (z: number) => void; onfit: () => void; ongrid: () => void } = $props();
 	const editor = getEditor();
 
-	// Slider is logarithmic so 10%–400% feels even.
-	const toSlider = (z: number) => Math.log(z);
-	const fromSlider = (v: number) => Math.exp(v);
+	const STEPS = [0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+	function step(dir: 1 | -1) {
+		const z = editor.zoom;
+		const next =
+			dir > 0 ? STEPS.find((s) => s > z + 0.001) : [...STEPS].reverse().find((s) => s < z - 0.001);
+		if (next) onzoom(next);
+	}
 </script>
 
-<footer class="flex h-11 shrink-0 items-center gap-3 border-t border-line bg-white px-4 text-sm">
-	<span class="text-muted">
-		Page {editor.activePageIndex + 1} / {editor.data.pages.length}
-	</span>
-	<span class="text-xs text-muted">{editor.data.width} × {editor.data.height} px</span>
-	<div class="ml-auto flex items-center gap-2">
-		<input
-			type="range"
-			class="w-36 accent-brand"
-			min={toSlider(0.1)}
-			max={toSlider(4)}
-			step="0.01"
-			value={toSlider(editor.zoom)}
-			oninput={(e) => onzoom(fromSlider(Number(e.currentTarget.value)))}
-			aria-label="Zoom"
-		/>
+<!-- Two floating pills on the canvas instead of a full-width status bar. -->
+<div
+	class="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-3 text-sm"
+>
+	<div
+		class="pointer-events-auto flex h-10 items-center gap-1 rounded-xl bg-white/95 pr-1 pl-3 shadow-soft ring-1 ring-line backdrop-blur"
+	>
+		<span class="font-medium tabular-nums">
+			Page {editor.activePageIndex + 1}
+			<span class="text-muted">of {editor.data.pages.length}</span>
+		</span>
+		<span class="hidden px-1 text-xs text-muted tabular-nums sm:inline"
+			>{editor.data.width} × {editor.data.height}</span
+		>
+		<button class="icon-btn size-8" title="All pages" onclick={ongrid}
+			><LayoutGrid class="size-4" /></button
+		>
+	</div>
+
+	<div
+		class="pointer-events-auto flex h-10 items-center gap-0.5 rounded-xl bg-white/95 px-1 shadow-soft ring-1 ring-line backdrop-blur"
+	>
+		<button class="icon-btn size-8" title="Zoom out (Ctrl -)" onclick={() => step(-1)}
+			><Minus class="size-4" /></button
+		>
 		<button
-			class="w-14 rounded-md px-1 py-0.5 text-center tabular-nums hover:bg-gray-100"
-			title="Zoom to fit (Ctrl+0)"
+			class="h-8 w-14 rounded-lg text-center font-medium tabular-nums transition hover:bg-ink/[0.05]"
+			title="Fit to screen (Ctrl 0)"
 			onclick={onfit}
 		>
 			{Math.round(editor.zoom * 100)}%
 		</button>
+		<button class="icon-btn size-8" title="Zoom in (Ctrl +)" onclick={() => step(1)}
+			><Plus class="size-4" /></button
+		>
+		<div class="mx-0.5 h-5 w-px bg-line" aria-hidden="true"></div>
 		<button class="icon-btn size-8" title="Fit to screen" onclick={onfit}
 			><Maximize class="size-4" /></button
 		>
-		<button class="icon-btn size-8" title="Grid view" onclick={ongrid}
-			><LayoutGrid class="size-4" /></button
-		>
 	</div>
-</footer>
+</div>

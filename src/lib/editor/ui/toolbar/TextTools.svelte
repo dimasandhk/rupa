@@ -34,7 +34,7 @@
 		Strikethrough,
 		Underline,
 		UnfoldVertical
-	} from '@lucide/svelte';
+	} from '#lib/icons.ts';
 	import { ensureFont } from '../../canvas/fonts';
 	import { getEditor } from '../../context';
 	import type { TextEffects, TextElement } from '../../model/types';

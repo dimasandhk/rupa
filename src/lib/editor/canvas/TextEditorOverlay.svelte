@@ -65,7 +65,7 @@
 		margin: 0;
 		padding: 0;
 		border: none;
-		outline: 1.5px solid var(--color-brand, #8b3dff);
+		outline: 1.5px solid var(--color-brand, #c2553a);
 		background: transparent;
 		resize: none;
 		overflow: hidden;

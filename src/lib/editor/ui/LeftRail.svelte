@@ -1,14 +1,8 @@
 <script lang="ts">
-	import {
-		ChevronLeft,
-		CloudUpload,
-		Image,
-		Layers,
-		LayoutTemplate,
-		Shapes,
-		Type
-	} from '@lucide/svelte';
+	import { CloudUpload, Image, Layers, LayoutTemplate, Shapes, Type, X } from '#lib/icons.ts';
 	import type { Component } from 'svelte';
+	import { cubicOut } from 'svelte/easing';
+	import { fly } from 'svelte/transition';
 	import ElementsPanel from './panels/ElementsPanel.svelte';
 	import LayersPanel from './panels/LayersPanel.svelte';
 	import PhotosPanel from './panels/PhotosPanel.svelte';
@@ -19,40 +13,62 @@
 	let { onerror }: { onerror: (m: string) => void } = $props();
 
 	type Tab = 'templates' | 'elements' | 'text' | 'uploads' | 'photos' | 'layers';
-	const TABS: { id: Tab; label: string; icon: Component }[] = [
-		{ id: 'templates', label: 'Design', icon: LayoutTemplate },
-		{ id: 'elements', label: 'Elements', icon: Shapes },
-		{ id: 'text', label: 'Text', icon: Type },
-		{ id: 'uploads', label: 'Uploads', icon: CloudUpload },
-		{ id: 'photos', label: 'Photos', icon: Image },
-		{ id: 'layers', label: 'Layers', icon: Layers }
+	const TABS: { id: Tab; label: string; hint: string; icon: Component }[] = [
+		{
+			id: 'templates',
+			label: 'Templates',
+			hint: 'Start from a finished layout',
+			icon: LayoutTemplate
+		},
+		{ id: 'elements', label: 'Elements', hint: 'Shapes, lines and graphics', icon: Shapes },
+		{ id: 'text', label: 'Text', hint: 'Type styles and pairings', icon: Type },
+		{ id: 'uploads', label: 'Uploads', hint: 'Images from your computer', icon: CloudUpload },
+		{ id: 'photos', label: 'Photos', hint: 'Free stock photography', icon: Image },
+		{ id: 'layers', label: 'Layers', hint: 'Stacking order on this page', icon: Layers }
 	];
 
 	let tab = $state<Tab | null>('elements');
+	const current = $derived(TABS.find((t) => t.id === tab));
 </script>
 
-<nav
-	class="flex w-[72px] shrink-0 flex-col items-center gap-1 bg-[#18191b] py-2 text-white"
-	aria-label="Side panels"
->
+<nav class="flex w-16 shrink-0 flex-col items-center gap-1 pt-1" aria-label="Side panels">
 	{#each TABS as t (t.id)}
+		{@const active = tab === t.id}
 		<button
-			class="flex w-16 flex-col items-center gap-1 rounded-lg py-2 text-[11px] hover:text-white {tab ===
-			t.id
-				? 'bg-[#252627] text-white'
-				: 'text-white/70'}"
-			aria-pressed={tab === t.id}
-			onclick={() => (tab = tab === t.id ? null : t.id)}
+			class="group flex w-14 flex-col items-center gap-1 py-1.5 text-[11px] font-medium transition {active
+				? 'text-ink'
+				: 'text-muted hover:text-ink'}"
+			aria-pressed={active}
+			onclick={() => (tab = active ? null : t.id)}
 		>
-			<t.icon class="size-5" />
+			<span
+				class="grid size-10 place-items-center rounded-xl transition duration-200 ease-(--ease-spring) group-active:scale-95 {active
+					? 'bg-white text-brand shadow-soft ring-1 ring-line'
+					: 'group-hover:bg-ink/[0.05]'}"
+			>
+				<t.icon class="size-5" weight={active ? 'fill' : 'regular'} />
+			</span>
 			{t.label}
 		</button>
 	{/each}
 </nav>
 
-{#if tab}
-	<aside class="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
-		<div class="min-h-0 flex-1 overflow-y-auto p-4">
+{#if current}
+	<aside
+		class="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-line"
+		aria-label="{current.label} panel"
+		transition:fly={{ x: -10, duration: 200, easing: cubicOut }}
+	>
+		<header class="flex items-start gap-2 px-4 pt-4 pb-2">
+			<div class="min-w-0 flex-1">
+				<h2 class="font-display text-xl font-medium">{current.label}</h2>
+				<p class="text-xs text-muted">{current.hint}</p>
+			</div>
+			<button class="icon-btn size-8" title="Close panel" onclick={() => (tab = null)}>
+				<X class="size-4" />
+			</button>
+		</header>
+		<div class="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-4">
 			{#if tab === 'templates'}
 				<TemplatesPanel {onerror} />
 			{:else if tab === 'elements'}
@@ -67,12 +83,5 @@
 				<LayersPanel />
 			{/if}
 		</div>
-		<button
-			class="absolute top-1/2 -right-4 z-10 grid h-16 w-4 -translate-y-1/2 place-items-center rounded-r-lg border border-l-0 border-line bg-white text-muted hover:text-ink"
-			title="Hide panel"
-			onclick={() => (tab = null)}
-		>
-			<ChevronLeft class="size-3.5" />
-		</button>
 	</aside>
 {/if}

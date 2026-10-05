@@ -1,21 +1,54 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/fraunces/opsz-italic.css';
 
+/*
+ * Rupa: a warm paper studio. One accent (clay), one warm gray family,
+ * Geist for the interface and Fraunces for display type.
+ */
 @theme {
-	--font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-	--color-brand: #8b3dff;
-	--color-brand-600: #7731e6;
-	--color-brand-50: #f4edff;
-	--color-ink: #0e1318;
-	--color-muted: #5e6d77;
-	--color-line: #e2e4e8;
-	--color-canvas: #ebecf0;
+	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+
+	--color-brand: #c2553a;
+	--color-brand-600: #a6452d;
+	--color-brand-50: #f8ece6;
+	--color-ink: #1f1b17;
+	--color-muted: #776b61;
+	--color-line: #e7e0d6;
+	--color-paper: #f6f2eb;
+	--color-canvas: #ece6dc;
+
+	/* Warm the stock grays so hovers never drift cool. */
+	--color-gray-50: var(--color-stone-50);
+	--color-gray-100: var(--color-stone-100);
+	--color-gray-200: var(--color-stone-200);
+	--color-gray-300: var(--color-stone-300);
+
+	/* Shadows tinted with the paper's brown, from a single top light. */
+	--shadow-soft: 0 1px 2px rgb(74 52 30 / 0.06), 0 6px 18px -8px rgb(74 52 30 / 0.14);
+	--shadow-float: 0 1px 2px rgb(74 52 30 / 0.06), 0 18px 40px -14px rgb(74 52 30 / 0.28);
+	--shadow-page: 0 1px 2px rgb(74 52 30 / 0.08), 0 14px 36px -14px rgb(74 52 30 / 0.3);
+
+	--ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 
 @layer base {
 	html,
 	body {
-		@apply h-full bg-white text-ink antialiased;
+		@apply h-full bg-paper text-ink antialiased;
+		font-feature-settings: 'ss01', 'cv11';
+	}
+
+	h1,
+	h2,
+	h3 {
+		text-wrap: balance;
+	}
+
+	p {
+		text-wrap: pretty;
 	}
 
 	button {
@@ -25,29 +58,62 @@
 	button:disabled {
 		cursor: default;
 	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: 2px;
+	}
+}
+
+@utility font-display {
+	font-family: var(--font-display);
+	font-optical-sizing: auto;
+	letter-spacing: -0.02em;
 }
 
 @utility btn {
-	@apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-40;
+	@apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition duration-200 ease-(--ease-spring) active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
 }
 @utility btn-primary {
-	@apply btn bg-brand text-white hover:bg-brand-600;
+	@apply btn bg-brand text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] hover:bg-brand-600;
 }
 @utility btn-ghost {
-	@apply btn hover:bg-black/5;
+	@apply btn text-ink/85 hover:bg-ink/[0.06] hover:text-ink;
 }
 @utility btn-outline {
-	@apply btn border border-line bg-white hover:bg-gray-50;
+	@apply btn bg-white ring-1 ring-line hover:bg-gray-50 hover:ring-ink/15;
 }
 @utility icon-btn {
-	@apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent aria-pressed:bg-brand-50 aria-pressed:text-brand;
+	@apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-ink/80 transition duration-200 ease-(--ease-spring) hover:bg-ink/[0.06] hover:text-ink active:scale-[0.94] disabled:opacity-30 disabled:hover:bg-transparent disabled:active:scale-100 aria-pressed:bg-brand-50 aria-pressed:text-brand;
 }
 @utility input {
-	@apply h-9 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+	@apply h-9 w-full rounded-lg bg-white px-3 text-sm ring-1 ring-line transition outline-none placeholder:text-muted/70 focus:ring-2 focus:ring-brand/40;
 }
 @utility popover {
-	@apply z-50 rounded-xl border border-line bg-white p-3 shadow-xl;
+	@apply z-50 rounded-2xl bg-white p-3 shadow-float ring-1 ring-line;
 }
 @utility panel-title {
-	@apply mb-2 text-sm font-semibold text-ink;
+	@apply mb-2 text-[13px] font-semibold text-ink;
+}
+/* Small label above a group, sentence case with a little air. */
+@utility eyebrow {
+	@apply text-xs font-medium tracking-wide text-muted;
+}
+/* The workspace surface: warm paper with a faint dot grid. */
+@utility canvas-dots {
+	background-color: var(--color-canvas);
+	background-image: radial-gradient(rgb(74 52 30 / 0.13) 1px, transparent 1.2px);
+	background-size: 22px 22px;
+}
+/* Fixed grain overlay that takes the digital edge off flat surfaces. */
+@utility grain {
+	&::after {
+		content: '';
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		pointer-events: none;
+		opacity: 0.05;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	}
 }

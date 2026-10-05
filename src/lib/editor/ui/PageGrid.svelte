@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CopyPlus, Plus, Trash2, X } from '@lucide/svelte';
+	import { CopyPlus, Plus, Trash2, X } from '#lib/icons.ts';
 	import { renderPage } from '../canvas/export';
 	import { getEditor } from '../context';
 	import type { Page } from '../model/types';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronDown, ChevronUp, CopyPlus, FilePlus2, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, ChevronUp, CopyPlus, FilePlus2, Trash2 } from '#lib/icons.ts';
 	import { tick } from 'svelte';
 	import PageCanvas from '../canvas/PageCanvas.svelte';
 	import { getEditor } from '../context';
@@ -23,7 +23,7 @@
 	const MAX_ZOOM = 4;
 
 	export function fitZoom() {
-		const z = Math.min((viewW - 96) / editor.data.width, (viewH - 120) / editor.data.height);
+		const z = Math.min((viewW - 96) / editor.data.width, (viewH - 200) / editor.data.height);
 		return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
 	}
 
@@ -112,57 +112,65 @@
 	ondragover={(e) => e.preventDefault()}
 	ondrop={onDrop}
 >
-	<div class="flex min-w-max flex-col items-center gap-6 px-12 py-8" data-workspace-bg>
+	<!-- Extra top/bottom room so the floating toolbar and zoom pills never cover a page. -->
+	<div class="flex min-w-max flex-col items-center gap-8 px-12 pt-20 pb-24" data-workspace-bg>
 		{#each editor.data.pages as page, i (page.id)}
-			<section data-page-index={i} data-workspace-bg>
-				<header class="mb-2 flex h-8 items-center gap-1 text-sm text-muted" data-workspace-bg>
-					<span class="mr-auto font-medium" class:text-ink={editor.activePageIndex === i}>
-						Page {i + 1}{pageCount > 1 ? ` of ${pageCount}` : ''}
+			{@const active = editor.activePageIndex === i}
+			<section data-page-index={i} data-workspace-bg class="group/page">
+				<header class="mb-2 flex h-8 items-center gap-0.5 text-sm" data-workspace-bg>
+					<span class="mr-auto font-medium transition {active ? 'text-ink' : 'text-muted'}">
+						Page {i + 1}
 					</span>
-					<button
-						class="icon-btn size-7"
-						title="Move page up"
-						disabled={i === 0}
-						onclick={() => editor.movePage(i, i - 1)}><ChevronUp class="size-4" /></button
+					<div
+						class="flex items-center gap-0.5 transition-opacity duration-200 {active
+							? 'opacity-100'
+							: 'opacity-0 group-hover/page:opacity-100 focus-within:opacity-100'}"
 					>
-					<button
-						class="icon-btn size-7"
-						title="Move page down"
-						disabled={i === pageCount - 1}
-						onclick={() => editor.movePage(i, i + 1)}><ChevronDown class="size-4" /></button
-					>
-					<button
-						class="icon-btn size-7"
-						title="Duplicate page"
-						onclick={() => editor.duplicatePage(i)}><CopyPlus class="size-4" /></button
-					>
-					<button
-						class="icon-btn size-7"
-						title="Delete page"
-						disabled={pageCount === 1}
-						onclick={() => editor.deletePage(i)}><Trash2 class="size-4" /></button
-					>
-					<button
-						class="icon-btn size-7"
-						title="Add page"
-						onclick={() => {
-							editor.setActivePage(i);
-							editor.addPage();
-							scrollToPage(i + 1);
-						}}><FilePlus2 class="size-4" /></button
-					>
+						<button
+							class="icon-btn size-7"
+							title="Move page up"
+							disabled={i === 0}
+							onclick={() => editor.movePage(i, i - 1)}><ChevronUp class="size-4" /></button
+						>
+						<button
+							class="icon-btn size-7"
+							title="Move page down"
+							disabled={i === pageCount - 1}
+							onclick={() => editor.movePage(i, i + 1)}><ChevronDown class="size-4" /></button
+						>
+						<button
+							class="icon-btn size-7"
+							title="Duplicate page"
+							onclick={() => editor.duplicatePage(i)}><CopyPlus class="size-4" /></button
+						>
+						<button
+							class="icon-btn size-7"
+							title="Delete page"
+							disabled={pageCount === 1}
+							onclick={() => editor.deletePage(i)}><Trash2 class="size-4" /></button
+						>
+						<button
+							class="icon-btn size-7"
+							title="Add page"
+							onclick={() => {
+								editor.setActivePage(i);
+								editor.addPage();
+								scrollToPage(i + 1);
+							}}><FilePlus2 class="size-4" /></button
+						>
+					</div>
 				</header>
 				<div
-					class="bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] transition-shadow"
-					class:ring-2={editor.activePageIndex === i && pageCount > 1}
-					class:ring-brand={editor.activePageIndex === i && pageCount > 1}
+					class="bg-white shadow-page transition duration-200 {active && pageCount > 1
+						? 'ring-2 ring-brand/70 ring-offset-4 ring-offset-canvas'
+						: ''}"
 				>
 					<PageCanvas index={i} {oncontextmenu} />
 				</div>
 			</section>
 		{/each}
 		<button
-			class="btn h-11 border border-line bg-white px-6 shadow-sm hover:bg-gray-50"
+			class="btn h-12 rounded-xl border border-dashed border-ink/20 text-muted hover:border-brand hover:bg-white/60 hover:text-brand"
 			style:width="{Math.max(240, editor.data.width * editor.zoom)}px"
 			onclick={() => {
 				editor.setActivePage(pageCount - 1);

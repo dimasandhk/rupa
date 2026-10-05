@@ -11,7 +11,7 @@ async function signUp(page: Page) {
 	await page.getByLabel('Email').fill(email);
 	await page.getByLabel('Password').fill('e2e-test-password');
 	await page.locator('form').getByRole('button', { name: 'Sign up' }).click();
-	await expect(page.getByRole('heading', { name: 'What will you design today?' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: /What are we making/ })).toBeVisible();
 	await hydrated(page);
 }
 
@@ -57,7 +57,7 @@ test('create, edit, persist, add pages and present a design', async ({ page }) =
 
 	// Pages + present mode.
 	await page.getByRole('button', { name: 'Add page' }).last().click();
-	await expect(page.getByText('Page 2 of 2')).toBeVisible();
+	await expect(page.getByText('Page 2', { exact: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'All changes saved' })).toBeVisible({
 		timeout: 10_000
 	});
@@ -75,7 +75,7 @@ test('apply a template and export every page', async ({ page }) => {
 		.click();
 	await page.waitForURL(/\/design\//);
 
-	await page.getByRole('button', { name: 'Design' }).click();
+	await page.getByRole('button', { name: 'Templates', exact: true }).click();
 	await page.getByRole('button', { name: 'Pitch Deck' }).click();
 	await expect
 		.poll(() => page.evaluate(() => (window as unknown as Win).__editor.data.pages.length))

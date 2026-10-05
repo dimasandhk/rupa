@@ -20,7 +20,8 @@
 	} = $props();
 
 	const editor = getEditor();
-	const BRAND = '#8b3dff';
+	// Matches --color-brand in layout.css (Konva draws on canvas, so no CSS vars).
+	const BRAND = '#c2553a';
 
 	const page = $derived(editor.data.pages[index]);
 	const active = $derived(editor.activePageIndex === index);
@@ -95,7 +96,7 @@
 			guides.add(
 				new Konva.Line({
 					points: g.orientation === 'V' ? [g.pos, 0, g.pos, H] : [0, g.pos, W, g.pos],
-					stroke: '#ff3dae',
+					stroke: BRAND,
 					strokeWidth: 1 / z,
 					dash: [4 / z, 4 / z],
 					listening: false
@@ -141,7 +142,7 @@
 
 		hover = new Konva.Rect({ stroke: BRAND, listening: false, visible: false });
 		marquee = new Konva.Rect({
-			fill: 'rgba(139,61,255,0.08)',
+			fill: 'rgba(194,85,58,0.07)',
 			stroke: BRAND,
 			listening: false,
 			visible: false
@@ -150,10 +151,11 @@
 		tr = new Konva.Transformer({
 			borderStroke: BRAND,
 			borderStrokeWidth: 1.5,
-			anchorStroke: '#c7c7d1',
+			anchorStroke: BRAND,
+			anchorStrokeWidth: 1.5,
 			anchorFill: '#ffffff',
-			anchorSize: 12,
-			anchorCornerRadius: 6,
+			anchorSize: 9,
+			anchorCornerRadius: 2,
 			rotateAnchorOffset: 28,
 			rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
 			rotationSnapTolerance: 4,

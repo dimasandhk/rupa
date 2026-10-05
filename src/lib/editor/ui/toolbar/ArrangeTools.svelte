@@ -19,7 +19,7 @@
 		LockOpen,
 		Trash2,
 		Ungroup
-	} from '@lucide/svelte';
+	} from '#lib/icons.ts';
 	import type { Alignment } from '../../commands/arrange';
 	import { getEditor } from '../../context';
 	import Pop from '../widgets/Pop.svelte';

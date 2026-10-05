@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { dev } from '$app/env';
 	import { removeBackground } from '#lib/ai/bg-removal.ts';
-	import { X } from '@lucide/svelte';
+	import { X } from '#lib/icons.ts';
+	import { fly } from 'svelte/transition';
 	import { loadImage } from '../canvas/images';
 	import { setEditor } from '../context';
 	import type { ImageElement } from '../model/types';
@@ -82,9 +83,11 @@
 
 <div class="flex h-dvh flex-col overflow-hidden">
 	<TopBar {autosave} onerror={notify} />
-	<div class="flex min-h-0 flex-1">
+	<div class="flex min-h-0 flex-1 gap-2 pr-2 pb-2 pl-1">
 		<LeftRail onerror={notify} />
-		<main class="flex min-w-0 flex-1 flex-col bg-canvas">
+		<main
+			class="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl canvas-dots ring-1 ring-line"
+		>
 			<ContextToolbar onremovebg={toggleBackground} {removingId} />
 			<Workspace bind:this={workspace} oncontextmenu={(p) => (menuPos = p)} onerror={notify} />
 			<Footer
@@ -111,10 +114,11 @@
 
 {#if autosave.status === 'conflict'}
 	<div
-		class="fixed top-16 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm shadow-lg ring-1 ring-amber-300"
+		class="fixed top-16 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-2xl border-l-4 border-brand bg-white py-2.5 pr-2.5 pl-4 text-sm shadow-float ring-1 ring-line"
 		role="alert"
+		transition:fly={{ y: -8, duration: 200 }}
 	>
-		This design was changed in another tab or window.
+		This design changed in another tab or window.
 		<button class="btn-outline h-8" onclick={() => location.reload()}>Load latest</button>
 		<button class="btn-primary h-8" onclick={() => autosave.overwrite()}>Keep my version</button>
 	</div>
@@ -122,11 +126,14 @@
 
 {#if toast}
 	<div
-		class="fixed bottom-16 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white shadow-lg"
-		class:bg-ink={toast.tone === 'info'}
-		class:bg-red-600={toast.tone === 'error'}
-		role="status"
+		class="fixed bottom-20 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-center gap-3 rounded-2xl bg-ink py-2.5 pr-2.5 pl-4 text-sm text-paper shadow-float"
+		role={toast.tone === 'error' ? 'alert' : 'status'}
+		transition:fly={{ y: 8, duration: 200 }}
 	>
+		{#if toast.tone === 'error'}<span
+				class="size-2 shrink-0 rounded-full bg-brand"
+				aria-hidden="true"
+			></span>{/if}
 		{toast.message}
 		<button class="opacity-70 hover:opacity-100" aria-label="Dismiss" onclick={() => (toast = null)}
 			><X class="size-4" /></button
