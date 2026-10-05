@@ -8,6 +8,7 @@ import type {
 	ShapeElement,
 	TextElement
 } from '../model/types';
+import { konvaFill } from '../color/color';
 import { ensureFont, isFontReady } from './fonts';
 import { getImage, svgToDataUrl } from './images';
 import { PATHS, POLYGONS } from './shapes';
@@ -103,7 +104,7 @@ export function textAttrs(el: TextElement): Konva.TextConfig {
 		letterSpacing: el.letterSpacing,
 		lineHeight: el.lineHeight,
 		align: el.align,
-		fill: el.fill,
+		...konvaFill(el.fill, el.width, el.height),
 		wrap: 'word'
 	};
 }
@@ -120,6 +121,8 @@ function buildText(content: Konva.Group, el: TextElement, ctx: BuildContext) {
 		fillAfterStrokeEnabled: true,
 		name: 'text'
 	});
+	// Gradients span the laid-out text box, which is only known after layout.
+	node.setAttrs(konvaFill(el.fill, el.width, node.height()));
 	const bg = el.effects.background;
 	if (bg) {
 		const p = bg.padding;
@@ -141,7 +144,6 @@ function buildText(content: Konva.Group, el: TextElement, ctx: BuildContext) {
 function buildShape(content: Konva.Group, el: ShapeElement) {
 	const { width: w, height: h } = el;
 	const style = {
-		fill: el.fill,
 		stroke: el.strokeWidth > 0 ? el.stroke : undefined,
 		strokeWidth: el.strokeWidth,
 		dash: el.dash ? [el.strokeWidth * 3, el.strokeWidth * 2] : undefined,
@@ -149,14 +151,37 @@ function buildShape(content: Konva.Group, el: ShapeElement) {
 	};
 	if (el.shape === 'rect') {
 		const r = Math.min(el.cornerRadius, w / 2, h / 2);
-		content.add(new Konva.Rect({ width: w, height: h, cornerRadius: r, ...style }));
+		content.add(
+			new Konva.Rect({
+				width: w,
+				height: h,
+				cornerRadius: r,
+				...style,
+				...konvaFill(el.fill, w, h)
+			})
+		);
 	} else if (el.shape === 'ellipse') {
 		content.add(
-			new Konva.Ellipse({ x: w / 2, y: h / 2, radiusX: w / 2, radiusY: h / 2, ...style })
+			new Konva.Ellipse({
+				x: w / 2,
+				y: h / 2,
+				radiusX: w / 2,
+				radiusY: h / 2,
+				...style,
+				...konvaFill(el.fill, w, h, { x: -w / 2, y: -h / 2 })
+			})
 		);
 	} else if (POLYGONS[el.shape]) {
 		const points = POLYGONS[el.shape]!.map((v, i) => v * (i % 2 === 0 ? w : h));
-		content.add(new Konva.Line({ points, closed: true, lineJoin: 'round', ...style }));
+		content.add(
+			new Konva.Line({
+				points,
+				closed: true,
+				lineJoin: 'round',
+				...style,
+				...konvaFill(el.fill, w, h)
+			})
+		);
 	} else if (PATHS[el.shape]) {
 		content.add(
 			new Konva.Path({
@@ -164,7 +189,9 @@ function buildShape(content: Konva.Group, el: ShapeElement) {
 				scaleX: w / 100,
 				scaleY: h / 100,
 				strokeScaleEnabled: false,
-				...style
+				...style,
+				// Path coordinates live in a 100×100 box that is scaled to the element.
+				...konvaFill(el.fill, 100, 100)
 			})
 		);
 	}

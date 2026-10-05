@@ -1,7 +1,7 @@
 import { uploadImage } from '#lib/api.ts';
 import { ensureFont } from './canvas/fonts';
 import { createIcon, createImage, createLine, createShape, createText } from './model/factory';
-import type { ShapeKind, TextElement } from './model/types';
+import type { Fill, ShapeKind, TextElement } from './model/types';
 import type { Editor } from './state/editor.svelte';
 
 export interface TextPreset {
@@ -82,7 +82,7 @@ export async function addImageFile(editor: Editor, file: File) {
 	return up;
 }
 
-export function setBackgroundColor(editor: Editor, color: string) {
+export function setBackgroundColor(editor: Editor, color: Fill) {
 	editor.updatePage(
 		(p) => {
 			p.background.color = color;

@@ -4,6 +4,7 @@ import type {
 	BaseElement,
 	DesignData,
 	Element,
+	Fill,
 	IconElement,
 	ImageElement,
 	LineElement,
@@ -32,8 +33,8 @@ function base(box: Box, width: number, height: number): Omit<BaseElement, 'id'> 
 	};
 }
 
-export function createPage(background = '#ffffff'): Page {
-	return { id: newId(), background: { color: background }, elements: [] };
+export function createPage(background: Fill = '#ffffff'): Page {
+	return { id: newId(), background: { color: structuredClone(background) }, elements: [] };
 }
 
 export function createDesign(width: number, height: number): DesignData {

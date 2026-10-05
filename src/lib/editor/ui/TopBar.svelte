@@ -13,7 +13,7 @@
 		saved: { label: 'All changes saved', short: 'Saved', icon: Cloud },
 		saving: { label: 'Saving…', short: 'Saving', icon: CloudUpload },
 		unsaved: { label: 'Unsaved changes', short: 'Editing', icon: CloudUpload },
-		error: { label: 'Saving failed, retrying', short: 'Retrying', icon: CloudAlert },
+		error: { label: 'Saving failed', short: 'Not saved', icon: CloudAlert },
 		conflict: { label: 'Edited somewhere else', short: 'Conflict', icon: CloudAlert }
 	};
 	const status = $derived(STATUS[autosave.status]);

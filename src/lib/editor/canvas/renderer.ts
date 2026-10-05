@@ -1,5 +1,6 @@
 import Konva from 'konva';
 import type { Element, Page } from '../model/types';
+import { konvaFill } from '../color/color';
 import { onFontLoaded } from './fonts';
 import { getImage } from './images';
 import { buildElement } from './nodes';
@@ -56,7 +57,8 @@ export class PageRenderer {
 	sync(page: Page) {
 		this.#page = page;
 		const bg = page.background;
-		this.background.fill(bg.color);
+		const { width: bw, height: bh } = this.background.size();
+		this.background.setAttrs(konvaFill(bg.color, bw, bh));
 		const img = bg.image ? getImage(bg.image.src, () => this.#schedule()) : undefined;
 		this.#bgImage.setAttrs({ image: img, visible: !!img });
 		if (img) {

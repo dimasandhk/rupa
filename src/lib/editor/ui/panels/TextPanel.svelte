@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { primaryColor } from '../../color/color';
 	import { ensureFont } from '../../canvas/fonts';
 	import { getEditor } from '../../context';
 	import { addText, TEXT_PRESETS } from '../../insert';
@@ -106,7 +107,7 @@
 						style:font-family={`"${c.heading.fontFamily}"`}
 						style:font-weight={c.heading.fontWeight}
 						style:font-style={c.heading.italic ? 'italic' : 'normal'}
-						style:color={c.heading.fill}>{c.heading.text}</span
+						style:color={c.heading.fill && primaryColor(c.heading.fill)}>{c.heading.text}</span
 					>
 					<span class="text-[10px]" style:font-family={`"${c.body.fontFamily}"`}>{c.body.text}</span
 					>

@@ -3,6 +3,18 @@ import type { DesignData, Element } from './types';
 
 const color = z.string().max(64);
 
+const gradient = z.object({
+	type: z.enum(['linear', 'radial']),
+	angle: z.number(),
+	stops: z
+		.array(z.object({ offset: z.number().min(0).max(1), color }))
+		.min(2)
+		.max(8)
+});
+
+/** Solid colour or gradient. */
+const fill = z.union([color, gradient]);
+
 const base = {
 	id: z.string().min(1).max(64),
 	name: z.string().max(200).optional(),
@@ -38,7 +50,7 @@ const text = z.object({
 	letterSpacing: z.number(),
 	lineHeight: z.number().positive(),
 	align: z.enum(['left', 'center', 'right', 'justify']),
-	fill: color,
+	fill,
 	uppercase: z.boolean(),
 	effects: z.object({
 		shadow: shadow.optional(),
@@ -84,7 +96,7 @@ const shape = z.object({
 		'heart',
 		'speech'
 	]),
-	fill: color,
+	fill,
 	stroke: color,
 	strokeWidth: z.number().nonnegative(),
 	dash: z.boolean(),
@@ -128,7 +140,7 @@ export const designDataSchema: z.ZodType<DesignData> = z.object({
 			z.object({
 				id: z.string().min(1).max(64),
 				background: z.object({
-					color,
+					color: fill,
 					image: z.object({ src: z.string().max(4096), assetId: z.string().optional() }).optional()
 				}),
 				elements: z.array(elementSchema),

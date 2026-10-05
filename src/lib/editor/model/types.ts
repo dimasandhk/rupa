@@ -12,8 +12,24 @@ export interface DesignData {
 	pages: Page[];
 }
 
-export interface PageBackground {
+export interface GradientStop {
+	/** Position along the gradient, 0..1. */
+	offset: number;
 	color: string;
+}
+
+export interface Gradient {
+	type: 'linear' | 'radial';
+	/** CSS convention: 0° points up, 90° points right. Ignored for radial. */
+	angle: number;
+	stops: GradientStop[];
+}
+
+/** A solid colour (hex) or a gradient. Plain strings stay valid, so old designs load unchanged. */
+export type Fill = string | Gradient;
+
+export interface PageBackground {
+	color: Fill;
 	image?: { src: string; assetId?: string };
 }
 
@@ -64,7 +80,7 @@ export interface TextElement extends BaseElement {
 	letterSpacing: number;
 	lineHeight: number;
 	align: 'left' | 'center' | 'right' | 'justify';
-	fill: string;
+	fill: Fill;
 	uppercase: boolean;
 	effects: TextEffects;
 }
@@ -116,7 +132,7 @@ export type ShapeKind =
 export interface ShapeElement extends BaseElement {
 	type: 'shape';
 	shape: ShapeKind;
-	fill: string;
+	fill: Fill;
 	stroke: string;
 	strokeWidth: number;
 	dash: boolean;

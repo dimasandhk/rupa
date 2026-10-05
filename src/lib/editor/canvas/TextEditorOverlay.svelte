@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fillToCss, isGradient } from '../color/color';
 	import type { TextElement } from '../model/types';
 
 	let { el, zoom, oncommit }: { el: TextElement; zoom: number; oncommit: (text: string) => void } =
@@ -51,7 +52,10 @@
 	style:line-height={el.lineHeight}
 	style:letter-spacing="{el.letterSpacing * zoom}px"
 	style:text-align={el.align}
-	style:color={el.fill}
+	style:color={isGradient(el.fill) ? 'transparent' : el.fill}
+	style:background-image={isGradient(el.fill) ? fillToCss(el.fill) : undefined}
+	style:background-clip={isGradient(el.fill) ? 'text' : undefined}
+	style:caret-color={isGradient(el.fill) ? el.fill.stops[0]?.color : undefined}
 	style:text-transform={el.uppercase ? 'uppercase' : 'none'}
 	style:text-decoration={[el.underline && 'underline', el.strike && 'line-through']
 		.filter(Boolean)

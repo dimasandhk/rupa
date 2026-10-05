@@ -2,7 +2,7 @@ import { cloneWithNewIds, createPage, deepClone, newId } from '../model/factory'
 import type { DesignData } from '../model/types';
 
 export function addPage(data: DesignData, afterIndex: number): number {
-	const background = data.pages[afterIndex]?.background.color ?? '#ffffff';
+	const background = deepClone(data.pages[afterIndex]?.background.color ?? '#ffffff');
 	data.pages.splice(afterIndex + 1, 0, createPage(background));
 	return afterIndex + 1;
 }

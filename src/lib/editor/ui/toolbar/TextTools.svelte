@@ -35,6 +35,7 @@
 		Underline,
 		UnfoldVertical
 	} from '#lib/icons.ts';
+	import { fillToCss, primaryColor } from '../../color/color';
 	import { ensureFont } from '../../canvas/fonts';
 	import { getEditor } from '../../context';
 	import type { TextEffects, TextElement } from '../../model/types';
@@ -123,7 +124,7 @@
 			name: 'Hollow',
 			effects: (t) => ({
 				outline: {
-					color: t.fill === 'transparent' ? '#000000' : t.fill,
+					color: t.fill === 'transparent' ? '#000000' : primaryColor(t.fill),
 					width: Math.max(1, t.fontSize * 0.03)
 				}
 			}),
@@ -137,7 +138,7 @@
 			name: 'Neon',
 			effects: (t) => ({
 				shadow: {
-					color: t.fill === '#000000' ? '#ff66c4' : t.fill,
+					color: t.fill === '#000000' ? '#ff66c4' : primaryColor(t.fill),
 					blur: t.fontSize * 0.35,
 					offsetX: 0,
 					offsetY: 0,
@@ -203,12 +204,14 @@
 <ColorPicker
 	title="Text color"
 	value={el.fill === 'transparent' ? (el.effects.outline?.color ?? '#000000') : el.fill}
-	onchange={(c) => set((t) => (t.fill = c), 'fill')}
+	onfill={(f) => set((t) => (t.fill = f), 'fill')}
 >
 	{#snippet icon()}
 		<span class="flex flex-col items-center leading-none">
 			<span class="text-base font-bold">A</span>
-			<span class="mt-0.5 h-1 w-5 rounded-sm border border-black/10" style:background={el.fill}
+			<span
+				class="mt-0.5 h-1 w-5 rounded-sm border border-black/10"
+				style:background={fillToCss(el.fill)}
 			></span>
 		</span>
 	{/snippet}

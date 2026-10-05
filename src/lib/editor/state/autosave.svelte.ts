@@ -87,8 +87,11 @@ export class Autosave {
 				const e = err as Error & { status?: number };
 				this.status = e.status === 409 ? 'conflict' : 'error';
 				this.error = e.message;
-				// Retry transient failures.
-				if (this.status === 'error') this.#timer = setTimeout(() => this.flush(), 5000);
+				// Retry transient failures (network, server errors). A rejected save
+				// (4xx) would fail the same way again, so wait for the next edit.
+				const transient = !e.status || e.status >= 500;
+				if (this.status === 'error' && transient)
+					this.#timer = setTimeout(() => this.flush(), 5000);
 			} finally {
 				this.#inflight = undefined;
 			}

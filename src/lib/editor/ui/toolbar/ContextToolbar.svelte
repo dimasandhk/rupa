@@ -41,7 +41,7 @@
 			<ColorPicker
 				title="Background color"
 				value={page.background.color}
-				onchange={(c) => setBackgroundColor(editor, c)}
+				onfill={(f) => setBackgroundColor(editor, f)}
 			/>
 			<span class="pr-2 text-sm text-muted">Page background</span>
 			{#if page.background.image}

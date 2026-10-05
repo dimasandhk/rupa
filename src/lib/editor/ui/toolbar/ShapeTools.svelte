@@ -25,7 +25,7 @@
 	<ColorPicker
 		title="Color"
 		value={el.fill}
-		onchange={(c) => set<ShapeElement>((s) => (s.fill = c), 'fill')}
+		onfill={(f) => set<ShapeElement>((s) => (s.fill = f), 'fill')}
 	/>
 	<Pop title="Border style" triggerClass="icon-btn" width={300}>
 		{#snippet trigger()}<SquareDashed class="size-4" />{/snippet}
