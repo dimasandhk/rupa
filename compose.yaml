@@ -1,0 +1,74 @@
+# Local development: `pnpm db:start` runs postgres + object storage.
+# Full self-hosted stack: `docker compose --profile app up -d --build`
+#   (set APP_URL, e.g. https://design.example.com, for automatic HTTPS via Caddy).
+services:
+  db:
+    image: postgres:17
+    restart: always
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U root -d local']
+      interval: 5s
+      retries: 10
+
+  # S3-compatible object storage (RustFS, a MinIO drop-in). Console: http://localhost:9001
+  storage:
+    image: rustfs/rustfs:1.0.1
+    restart: always
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+      RUSTFS_CONSOLE_ENABLE: 'true'
+    volumes:
+      - storagedata:/data
+
+  app:
+    profiles: [app]
+    build: .
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      storage:
+        condition: service_started
+    expose:
+      - '3000'
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
+      S3_ENDPOINT: http://storage:9000
+      ORIGIN: ${APP_URL:-http://localhost:3000}
+      # adapter-node assumes https unless told the real scheme by the proxy.
+      PROTOCOL_HEADER: x-forwarded-proto
+
+  # Reverse proxy: plain http on localhost:3000, automatic HTTPS for a real domain.
+  proxy:
+    profiles: [app]
+    image: caddy:2
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - 80:80
+      - 443:443
+      - 3000:3000
+    environment:
+      APP_URL: ${APP_URL:-http://localhost:3000}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+
+volumes:
+  pgdata:
+  storagedata:
+  caddydata:
