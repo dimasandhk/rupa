@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+@theme {
+	--font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+	--color-brand: #8b3dff;
+	--color-brand-600: #7731e6;
+	--color-brand-50: #f4edff;
+	--color-ink: #0e1318;
+	--color-muted: #5e6d77;
+	--color-line: #e2e4e8;
+	--color-canvas: #ebecf0;
+}
+
+@layer base {
+	html,
+	body {
+		@apply h-full bg-white text-ink antialiased;
+	}
+
+	button {
+		cursor: pointer;
+	}
+
+	button:disabled {
+		cursor: default;
+	}
+}
+
+@utility btn {
+	@apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-40;
+}
+@utility btn-primary {
+	@apply btn bg-brand text-white hover:bg-brand-600;
+}
+@utility btn-ghost {
+	@apply btn hover:bg-black/5;
+}
+@utility btn-outline {
+	@apply btn border border-line bg-white hover:bg-gray-50;
+}
+@utility icon-btn {
+	@apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent aria-pressed:bg-brand-50 aria-pressed:text-brand;
+}
+@utility input {
+	@apply h-9 w-full rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+}
+@utility popover {
+	@apply z-50 rounded-xl border border-line bg-white p-3 shadow-xl;
+}
+@utility panel-title {
+	@apply mb-2 text-sm font-semibold text-ink;
+}
