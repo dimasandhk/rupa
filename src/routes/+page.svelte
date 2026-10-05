@@ -57,12 +57,12 @@
 	};
 </script>
 
-<svelte:head><title>Home · Dimva</title></svelte:head>
+<svelte:head><title>Home · Rupa</title></svelte:head>
 
 <header
 	class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-line bg-white/90 px-6 backdrop-blur"
 >
-	<a href="/" class="text-2xl font-extrabold tracking-tight text-brand">Dimva</a>
+	<a href="/" class="text-2xl font-extrabold tracking-tight text-brand">Rupa</a>
 	<label class="relative ml-6 hidden max-w-md flex-1 md:block">
 		<Search class="pointer-events-none absolute top-2.5 left-3 size-4 text-muted" />
 		<input bind:value={query} placeholder="Search your designs" class="input pl-9" />

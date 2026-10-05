@@ -413,7 +413,7 @@ export const TEMPLATES: TemplateDef[] = [
 			500,
 			page('#ffffff', [
 				s('ellipse', 100, 60, 300, 300, '#0e1318'),
-				t('DM', {
+				t('RS', {
 					x: 100,
 					y: 145,
 					w: 300,
@@ -423,7 +423,7 @@ export const TEMPLATES: TemplateDef[] = [
 					fill: '#ffffff',
 					align: 'center'
 				}),
-				t('DIMVA STUDIO', {
+				t('RUPA STUDIO', {
 					x: 50,
 					y: 400,
 					w: 400,

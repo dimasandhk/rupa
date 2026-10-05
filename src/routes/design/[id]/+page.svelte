@@ -6,7 +6,7 @@
 	let { data }: PageProps = $props();
 </script>
 
-<svelte:head><title>{data.title} · Dimva</title></svelte:head>
+<svelte:head><title>{data.title} · Rupa</title></svelte:head>
 
 <!-- Re-create the editor when navigating between designs (e.g. after "Copy & resize"). -->
 {#key data.id}

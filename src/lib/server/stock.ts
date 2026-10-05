@@ -23,7 +23,7 @@ export function activeProvider(): Provider {
 }
 
 // Wikimedia's API policy asks for an identifying User-Agent.
-const USER_AGENT = 'Dimva/0.1 (self-hosted design editor)';
+const USER_AGENT = 'Rupa/0.1 (self-hosted design editor)';
 const COMMONS =
 	'https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiextmetadatafilter=Artist';
 
@@ -35,7 +35,7 @@ async function getJson(url: string, headers: Record<string, string> = {}) {
 	return res.json();
 }
 
-const UTM = 'utm_source=dimva&utm_medium=referral';
+const UTM = 'utm_source=rupa&utm_medium=referral';
 
 // Just the fields we read from each provider's API.
 interface UnsplashPhoto {

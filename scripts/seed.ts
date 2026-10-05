@@ -15,8 +15,8 @@ import { TEMPLATES } from './templates';
 /** Local-only test account for development. Never use these values in production. */
 export const DEV_USER = {
 	name: 'Dev User',
-	email: 'dev@dimva.test',
-	password: 'dimva-dev-password'
+	email: 'dev@rupa.test',
+	password: 'rupa-dev-password'
 };
 
 const SYSTEM_USER_ID = 'system-templates';
@@ -32,7 +32,7 @@ async function seedTemplates() {
 		.values({
 			id: SYSTEM_USER_ID,
 			name: 'Templates',
-			email: 'templates@dimva.local',
+			email: 'templates@rupa.local',
 			emailVerified: true
 		})
 		.onConflictDoNothing();

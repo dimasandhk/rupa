@@ -5,7 +5,7 @@ const hydrated = (page: Page) => page.waitForSelector('html[data-hydrated]', { s
 
 /** A fresh account per run (local dev database only). */
 async function signUp(page: Page) {
-	const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@dimva.test`;
+	const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@rupa.test`;
 	await page.goto('/login?mode=signup');
 	await hydrated(page);
 	await page.getByLabel('Email').fill(email);

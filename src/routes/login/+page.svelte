@@ -10,14 +10,14 @@
 	);
 </script>
 
-<svelte:head><title>Sign in · Dimva</title></svelte:head>
+<svelte:head><title>Sign in · Rupa</title></svelte:head>
 
 <main
 	class="grid min-h-full place-items-center bg-gradient-to-br from-[#00c4cc] via-[#6a5cff] to-[#8b3dff] p-6"
 >
 	<div class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
 		<div class="mb-6 text-center">
-			<div class="text-3xl font-extrabold tracking-tight text-brand">Dimva</div>
+			<div class="text-3xl font-extrabold tracking-tight text-brand">Rupa</div>
 			<p class="mt-1 text-sm text-muted">
 				{mode === 'signin' ? 'Log in to keep designing' : 'Create an account to start designing'}
 			</p>

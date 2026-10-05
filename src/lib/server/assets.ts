@@ -43,7 +43,7 @@ export async function importRemoteImage(ownerId: string, url: string, kind: Asse
 	if (parsed.protocol !== 'https:') error(400, 'Only https images can be imported');
 	const res = await fetch(parsed, {
 		redirect: 'follow',
-		headers: { 'user-agent': 'Dimva/0.1 (self-hosted design editor)' },
+		headers: { 'user-agent': 'Rupa/0.1 (self-hosted design editor)' },
 		signal: AbortSignal.timeout(20_000)
 	});
 	if (!res.ok || !res.body) error(502, `Could not download the image (${res.status})`);

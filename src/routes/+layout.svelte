@@ -13,7 +13,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Dimva</title>
+	<title>Rupa</title>
 </svelte:head>
 
 {@render children()}

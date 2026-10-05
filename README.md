@@ -1,4 +1,4 @@
-# Dimva
+# Rupa
 
 A self-hostable, Canva-style design editor built with SvelteKit (Svelte 5) and Konva.
 
