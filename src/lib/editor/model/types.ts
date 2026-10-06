@@ -35,6 +35,8 @@ export interface PageBackground {
 
 export interface Page {
 	id: string;
+	/** Optional name shown in the slide filmstrip ("3 - Problem"). */
+	title?: string;
 	background: PageBackground;
 	elements: Element[];
 	notes?: string;

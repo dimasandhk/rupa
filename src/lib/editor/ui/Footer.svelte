@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LayoutGrid, Maximize, Minus, Plus } from '#lib/icons.ts';
+	import { LayoutGrid, Maximize, Minus, Plus, ScrollLayout, SlidesLayout } from '#lib/icons.ts';
 	import { getEditor } from '../context';
 
 	let {
@@ -16,11 +16,15 @@
 			dir > 0 ? STEPS.find((s) => s > z + 0.001) : [...STEPS].reverse().find((s) => s < z - 0.001);
 		if (next) onzoom(next);
 	}
+
+	const slides = $derived(editor.layout === 'slides');
 </script>
 
-<!-- Two floating pills on the canvas instead of a full-width status bar. -->
+<!-- Two pills: floating over the canvas in scroll layout, docked under the filmstrip in slides layout. -->
 <div
-	class="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex items-end justify-between gap-3 text-sm"
+	class="flex items-end justify-between gap-3 text-sm {slides
+		? 'shrink-0 bg-paper/70 px-3 pb-3 backdrop-blur'
+		: 'pointer-events-none absolute inset-x-3 bottom-3 z-20'}"
 >
 	<div
 		class="pointer-events-auto flex h-10 items-center gap-1 rounded-xl bg-white/95 pr-1 pl-3 shadow-soft ring-1 ring-line backdrop-blur"
@@ -35,6 +39,14 @@
 		<button class="icon-btn size-8" title="All pages" onclick={ongrid}
 			><LayoutGrid class="size-4" /></button
 		>
+		<button
+			class="icon-btn size-8"
+			title={slides ? 'Switch to scroll view' : 'Switch to slides view'}
+			aria-label={slides ? 'Scroll view' : 'Slides view'}
+			onclick={() => editor.setLayout(slides ? 'scroll' : 'slides')}
+		>
+			{#if slides}<ScrollLayout class="size-4" />{:else}<SlidesLayout class="size-4" />{/if}
+		</button>
 	</div>
 
 	<div

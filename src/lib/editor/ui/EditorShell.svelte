@@ -10,6 +10,7 @@
 	import { Autosave } from '../state/autosave.svelte';
 	import type { Editor } from '../state/editor.svelte';
 	import ContextMenu from './ContextMenu.svelte';
+	import Filmstrip from './Filmstrip.svelte';
 	import Footer from './Footer.svelte';
 	import LeftRail from './LeftRail.svelte';
 	import PageGrid from './PageGrid.svelte';
@@ -90,6 +91,7 @@
 		>
 			<ContextToolbar onremovebg={toggleBackground} {removingId} />
 			<Workspace bind:this={workspace} oncontextmenu={(p) => (menuPos = p)} onerror={notify} />
+			{#if editor.layout === 'slides'}<Filmstrip />{/if}
 			<Footer
 				onzoom={(z) => workspace.setZoom(z)}
 				onfit={() => workspace.zoomToFit()}

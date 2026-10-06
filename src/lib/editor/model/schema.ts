@@ -139,6 +139,7 @@ export const designDataSchema: z.ZodType<DesignData> = z.object({
 		.array(
 			z.object({
 				id: z.string().min(1).max(64),
+				title: z.string().max(200).optional(),
 				background: z.object({
 					color: fill,
 					image: z.object({ src: z.string().max(4096), assetId: z.string().optional() }).optional()

@@ -47,6 +47,14 @@ export function handleKeydown(e: KeyboardEvent, editor: Editor, hooks: ShortcutH
 		return;
 	}
 
+	// Page navigation: PageUp/PageDown everywhere; ←/→ in slides view when nothing is selected.
+	const pageStep =
+		e.key === 'PageDown' || (editor.layout === 'slides' && !has && e.key === 'ArrowRight')
+			? 1
+			: e.key === 'PageUp' || (editor.layout === 'slides' && !has && e.key === 'ArrowLeft')
+				? -1
+				: 0;
+	if (pageStep) return run(() => editor.setActivePage(editor.activePageIndex + pageStep));
 	if ((e.key === 'Delete' || e.key === 'Backspace') && has)
 		return run(() => editor.deleteSelected());
 	if (e.key === 'Escape') return run(() => editor.clearSelection());

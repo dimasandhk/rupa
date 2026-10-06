@@ -20,6 +20,24 @@ interface UpdateOptions {
 
 const CLIPBOARD_MARKER = 'dim-canva/elements';
 
+export type EditorLayout = 'scroll' | 'slides';
+
+/** Landscape 16:9 and 4:3 designs are presentations: show them slide by slide. */
+export function defaultLayout(data: { width: number; height: number }): EditorLayout {
+	const r = data.width / data.height;
+	return Math.abs(r - 16 / 9) < 0.02 || Math.abs(r - 4 / 3) < 0.02 ? 'slides' : 'scroll';
+}
+
+function readLayout(id: string): EditorLayout | undefined {
+	try {
+		const v =
+			typeof localStorage === 'undefined' ? null : localStorage.getItem(`rupa:layout:${id}`);
+		return v === 'slides' || v === 'scroll' ? v : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 export class Editor {
 	id: string;
 	/** Server version this document is based on (optimistic concurrency). */
@@ -36,6 +54,8 @@ export class Editor {
 	cropApply = true;
 	/** Increments on every document change; drives autosave. */
 	revision = $state(0);
+	/** 'slides': one page + filmstrip (presentations); 'scroll': pages stacked vertically. */
+	layout = $state<EditorLayout>('scroll');
 
 	#history = new History<UiSnapshot>();
 	#historyTick = $state(0);
@@ -46,6 +66,25 @@ export class Editor {
 		this.version = init.version ?? 1;
 		this.title = init.title;
 		this.data = init.data;
+		this.layout = readLayout(init.id) ?? defaultLayout(init.data);
+	}
+
+	setLayout(layout: EditorLayout) {
+		this.layout = layout;
+		try {
+			localStorage.setItem(`rupa:layout:${this.id}`, layout);
+		} catch {
+			// Storage unavailable (private mode): the choice just isn't remembered.
+		}
+	}
+
+	renamePage(index: number, title: string) {
+		const t = title.trim().slice(0, 200);
+		this.update((d) => {
+			if (!d.pages[index]) return;
+			if (t) d.pages[index].title = t;
+			else delete d.pages[index].title;
+		});
 	}
 
 	activePage: Page = $derived(this.data.pages[this.activePageIndex] ?? this.data.pages[0]);

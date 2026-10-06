@@ -165,3 +165,56 @@ test('crop an image by dragging the photo inside its frame', async ({ page }) =>
 	await page.keyboard.press('Control+z');
 	expect((await image()).crop.y).toBe(0);
 });
+
+test('presentations open in slides view with a working filmstrip', async ({ page }) => {
+	await signUp(page);
+	await page
+		.getByRole('button', { name: /Presentation/ })
+		.first()
+		.click();
+	await page.waitForURL(/\/design\//);
+	await page.waitForFunction(() => '__editor' in window);
+
+	type Ed = { layout: string; activePageIndex: number; data: { pages: { title?: string }[] } };
+	const state = () =>
+		page.evaluate(() => {
+			const ed = (window as unknown as { __editor: Ed }).__editor;
+			// Class getters don't survive serialization; copy the fields out.
+			return {
+				layout: ed.layout,
+				activePageIndex: ed.activePageIndex,
+				pages: ed.data.pages.length
+			};
+		});
+	const strip = page.getByRole('navigation', { name: 'Slides' });
+
+	// 16:9 opens as slides: one page on the canvas and a filmstrip below.
+	await expect(strip).toBeVisible();
+	expect((await state()).layout).toBe('slides');
+
+	// "+" adds a slide after the last one and opens it.
+	await strip.getByRole('button', { name: 'Add slide', exact: true }).click();
+	await expect.poll(async () => (await state()).pages).toBe(2);
+	expect((await state()).activePageIndex).toBe(1);
+
+	// Title a slide from its menu.
+	await strip.getByRole('button', { name: 'Slide 2 options' }).click();
+	await page.getByRole('menuitem', { name: 'Add title' }).click();
+	await page.keyboard.type('Problem');
+	await page.keyboard.press('Enter');
+	await expect(strip.getByRole('button', { name: 'Slide 2: Problem' })).toBeVisible();
+
+	// Thumbnails and arrow keys switch slides.
+	await strip.getByRole('button', { name: 'Slide 1', exact: true }).click();
+	expect((await state()).activePageIndex).toBe(0);
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async () => (await state()).activePageIndex).toBe(1);
+
+	// The toggle switches to the vertical scroll view and back; the choice sticks.
+	await page.getByRole('button', { name: 'Scroll view' }).click();
+	await expect(strip).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Add page' }).last()).toBeVisible();
+	await page.reload();
+	await page.waitForFunction(() => '__editor' in window);
+	expect((await state()).layout).toBe('scroll');
+});
