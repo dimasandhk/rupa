@@ -5,6 +5,7 @@
 	import type { ImageElement, TextElement } from '../../model/types';
 	import ColorPicker from '../widgets/ColorPicker.svelte';
 	import ArrangeTools from './ArrangeTools.svelte';
+	import FrameTools from './FrameTools.svelte';
 	import ImageTools from './ImageTools.svelte';
 	import ShapeTools from './ShapeTools.svelte';
 	import TextTools from './TextTools.svelte';
@@ -56,6 +57,8 @@
 		{:else}
 			{#if texts.length}
 				<TextTools els={texts} />
+			{:else if single?.type === 'frame'}
+				<FrameTools el={single} />
 			{:else if single?.type === 'image'}
 				<ImageTools el={single} {onremovebg} removing={removingId === single.id} />
 			{:else if single && (single.type === 'shape' || single.type === 'line' || single.type === 'icon')}

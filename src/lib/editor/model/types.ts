@@ -158,6 +158,48 @@ export interface IconElement extends BaseElement {
 	color: string;
 }
 
+/** Frame shapes. Clip shapes mask the image; the rest also draw a decoration around it. */
+export type FrameKind =
+	| 'square'
+	| 'rounded'
+	| 'circle'
+	| 'arch'
+	| 'triangle'
+	| 'diamond'
+	| 'hexagon'
+	| 'star'
+	| 'burst'
+	| 'heart'
+	| 'arrow'
+	| 'scallop'
+	| 'blob'
+	| 'leaf'
+	| 'parallelogram'
+	| 'polaroid'
+	| 'film'
+	| 'phone'
+	| 'tablet'
+	| 'laptop'
+	| 'browser'
+	| 'letter';
+
+/** The photo inside a frame; `crop` is the visible region in source pixels. */
+export interface FrameImage {
+	src: string;
+	assetId?: string;
+	naturalWidth: number;
+	naturalHeight: number;
+	crop: Crop;
+}
+
+export interface FrameElement extends BaseElement {
+	type: 'frame';
+	frame: FrameKind;
+	/** The character for letter/number frames. */
+	char?: string;
+	image?: FrameImage;
+}
+
 export interface GroupElement extends BaseElement {
 	type: 'group';
 	/** Children positioned relative to the group's origin. */
@@ -165,7 +207,13 @@ export interface GroupElement extends BaseElement {
 }
 
 export type Element =
-	TextElement | ImageElement | ShapeElement | LineElement | IconElement | GroupElement;
+	| TextElement
+	| ImageElement
+	| ShapeElement
+	| LineElement
+	| IconElement
+	| FrameElement
+	| GroupElement;
 
 export type ElementType = Element['type'];
 export type ElementOf<T extends ElementType> = Extract<Element, { type: T }>;

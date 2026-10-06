@@ -10,6 +10,7 @@ import type {
 } from '../model/types';
 import { konvaFill } from '../color/color';
 import { ensureFont, isFontReady } from './fonts';
+import { buildFrame } from './frameNodes';
 import { getImage, svgToDataUrl } from './images';
 import { PATHS, POLYGONS } from './shapes';
 
@@ -64,6 +65,9 @@ export function buildElement(group: Konva.Group, el: Element, ctx: BuildContext)
 			break;
 		case 'icon':
 			buildIcon(content, el, ctx);
+			break;
+		case 'frame':
+			buildFrame(content, el, ctx);
 			break;
 		case 'group': {
 			// Async resources of a child re-render the whole (top-level) group.

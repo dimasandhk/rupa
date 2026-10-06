@@ -31,6 +31,14 @@ export function colorSources(page: Page): ColorSource[] {
 					label: 'Photo',
 					crop: c
 				};
+			} else if (el.type === 'frame' && el.image) {
+				const c = el.image.crop;
+				source = {
+					key: `${el.image.src}#${c.x},${c.y},${c.width},${c.height}`,
+					src: el.image.src,
+					label: 'Photo',
+					crop: c
+				};
 			} else if (el.type === 'icon') {
 				const src = svgToDataUrl(el.svg, el.color);
 				source = { key: src, src, label: 'Graphic' };

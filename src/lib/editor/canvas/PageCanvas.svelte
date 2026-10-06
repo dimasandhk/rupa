@@ -2,21 +2,26 @@
 	import Konva from 'konva';
 	import { untrack } from 'svelte';
 	import { scaleSize } from '../commands/scale';
+	import { frameScreen, refitCrop } from '../model/frames';
 	import { getEditor } from '../context';
 	import { intersects, type Rect } from '../model/geometry';
 	import type { Element, Page } from '../model/types';
-	import { startCrop, type CropSession } from './crop';
+	import { startCrop, startFrameCrop, type CropSession, type FrameCropSession } from './crop';
+	import { frameClipPath } from './frameNodes';
 	import { getImage } from './images';
 	import { PageRenderer } from './renderer';
+	import { addImage, DRAG_IMAGE_TYPE, takeImageDrag, uploadImageFile } from '../insert';
 	import { snap, type Guide } from './snapping';
 	import TextEditorOverlay from './TextEditorOverlay.svelte';
 
 	let {
 		index,
-		oncontextmenu
+		oncontextmenu,
+		onerror
 	}: {
 		index: number;
 		oncontextmenu?: (e: { x: number; y: number }) => void;
+		onerror?: (message: string) => void;
 	} = $props();
 
 	const editor = getEditor();
@@ -43,7 +48,7 @@
 	let hover: Konva.Rect;
 	let marquee: Konva.Rect;
 	let guides: Konva.Group;
-	let crop: CropSession | undefined;
+	let crop: CropSession | FrameCropSession | undefined;
 
 	// ------------------------------------------------------------ helpers
 
@@ -87,6 +92,81 @@
 			const i = index;
 			editor.silentUpdate((d) => d.pages[i] && visit(d.pages[i].elements));
 		});
+	}
+
+	let dropFrameId: string | null = null;
+	let dropTarget: Konva.Rect;
+
+	/** Top-most unlocked frame under a page point. */
+	function frameAt(p: { x: number; y: number }, exceptId?: string): string | null {
+		for (let i = page.elements.length - 1; i >= 0; i--) {
+			const el = page.elements[i];
+			if (el.type !== 'frame' || el.locked || el.id === exceptId) continue;
+			const n = renderer.get(el.id);
+			if (!n) continue;
+			const r = rectOf(n);
+			if (p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height) return el.id;
+		}
+		return null;
+	}
+
+	function showDropTarget(id: string | null) {
+		const el = id ? findEl(page, id) : undefined;
+		if (!el) dropTarget.visible(false);
+		else
+			dropTarget.setAttrs({
+				x: el.x,
+				y: el.y,
+				width: el.width,
+				height: el.height,
+				rotation: el.rotation,
+				strokeWidth: 3 / stage.scaleX(),
+				visible: true
+			});
+		uiLayer.batchDraw();
+	}
+
+	// ---- photos dropped from the desktop or the side panels
+	function pagePoint(e: DragEvent) {
+		stage.setPointersPositions(e);
+		return stage.getRelativePointerPosition() ?? { x: W / 2, y: H / 2 };
+	}
+
+	const isImageDrag = (e: DragEvent) => {
+		const types = e.dataTransfer?.types ?? [];
+		return types.includes('Files') || types.includes(DRAG_IMAGE_TYPE);
+	};
+
+	function onDragOver(e: DragEvent) {
+		if (!isImageDrag(e)) return;
+		e.preventDefault();
+		e.stopPropagation();
+		showDropTarget(frameAt(pagePoint(e)));
+	}
+
+	async function onDrop(e: DragEvent) {
+		if (!isImageDrag(e)) return;
+		e.preventDefault();
+		e.stopPropagation();
+		showDropTarget(null);
+		editor.setActivePage(index);
+		const at = pagePoint(e);
+		const frameId = frameAt(at);
+		const resolve = takeImageDrag();
+		const files = [...(e.dataTransfer?.files ?? [])].filter((f) => f.type.startsWith('image/'));
+		try {
+			const photos = resolve ? [await resolve()] : await Promise.all(files.map(uploadImageFile));
+			photos.forEach((photo, n) => {
+				if (n === 0 && frameId) editor.fillFrame(frameId, photo);
+				else
+					addImage(editor, photo.src, photo.naturalWidth, photo.naturalHeight, photo.assetId, {
+						x: at.x + n * 24,
+						y: at.y + n * 24
+					});
+			});
+		} catch (err) {
+			onerror?.((err as Error).message);
+		}
 	}
 
 	function drawGuides(list: Guide[]) {
@@ -148,6 +228,12 @@
 			visible: false
 		});
 		guides = new Konva.Group({ listening: false });
+		dropTarget = new Konva.Rect({
+			stroke: BRAND,
+			dash: [8, 4],
+			listening: false,
+			visible: false
+		});
 		tr = new Konva.Transformer({
 			borderStroke: BRAND,
 			borderStrokeWidth: 1.5,
@@ -164,7 +250,7 @@
 			boundBoxFunc: (oldBox, newBox) =>
 				Math.abs(newBox.width) < 8 || Math.abs(newBox.height) < 4 ? oldBox : newBox
 		});
-		uiLayer.add(hover, guides, tr, marquee);
+		uiLayer.add(hover, guides, dropTarget, tr, marquee);
 		wireEvents();
 		ready = true;
 		return () => {
@@ -208,13 +294,13 @@
 		let anchors = corners;
 		if (single?.type === 'text') anchors = [...corners, ...sides];
 		else if (single?.type === 'line') anchors = sides;
-		else if (single?.type === 'shape')
+		else if (single?.type === 'shape' || single?.type === 'frame')
 			anchors = [...corners, ...sides, 'top-center', 'bottom-center'];
 		const locked = els.some((e) => e.locked);
 		tr.setAttrs({
 			enabledAnchors: locked ? [] : anchors,
 			rotateEnabled: !locked,
-			keepRatio: single?.type !== 'shape',
+			keepRatio: single?.type !== 'shape' && single?.type !== 'frame',
 			shouldOverdrawWholeArea: els.length > 1
 		});
 		tr.nodes(nodes);
@@ -233,16 +319,36 @@
 		if (!ready || !active || !editor.cropId) return;
 		const id = editor.cropId;
 		const el = untrack(() => findEl(page, id));
+		const i = index;
+		if (el?.type === 'frame' && el.image) {
+			const fimg = getImage(el.image.src);
+			if (!fimg) {
+				editor.cropId = null;
+				return;
+			}
+			const fsession = startFrameCrop(uiLayer, el, fimg, (r) => frameClipPath(el, r));
+			crop = fsession;
+			return () => {
+				const result = fsession.result();
+				fsession.destroy();
+				crop = undefined;
+				if (!editor.cropApply) return;
+				editor.update((d) => {
+					const target = findEl(d.pages[i], id);
+					if (target?.type === 'frame' && target.image) target.image.crop = result;
+				});
+			};
+		}
 		const img = el?.type === 'image' ? getImage(el.src) : undefined;
 		if (el?.type !== 'image' || !img) {
 			editor.cropId = null;
 			return;
 		}
-		const i = index;
-		crop = startCrop(uiLayer, el, img, () => {});
+		const session = startCrop(uiLayer, el, img, () => {});
+		crop = session;
 		return () => {
-			const result = crop!.result();
-			crop!.destroy();
+			const result = session.result();
+			session.destroy();
 			crop = undefined;
 			if (!editor.cropApply) return;
 			editor.update((d) => {
@@ -340,7 +446,7 @@
 			if (el?.type === 'text' && !el.locked) {
 				editor.select([el.id]);
 				editor.editingTextId = el.id;
-			} else if (el?.type === 'image') {
+			} else if (el?.type === 'image' || (el?.type === 'frame' && el.image)) {
 				editor.startCrop(el.id);
 			}
 		});
@@ -366,6 +472,17 @@
 		contentLayer.on('dragmove', (e) => {
 			const node = e.target;
 			if (!node.hasName('element') || tr.nodes().length > 1) return;
+			// Dragging a photo over a frame: highlight it; dropping snaps the photo in.
+			const dragged = findEl(page, node.id());
+			if (dragged?.type === 'image') {
+				const p = stage.getRelativePointerPosition();
+				dropFrameId = p ? frameAt(p, node.id()) : null;
+				showDropTarget(dropFrameId);
+				if (dropFrameId) {
+					drawGuides([]);
+					return;
+				}
+			}
 			const r = snap(rectOf(node), snapTargets, { width: W, height: H }, 6 / stage.scaleX());
 			node.position({ x: node.x() + r.dx, y: node.y() + r.dy });
 			drawGuides(r.guides);
@@ -375,6 +492,25 @@
 			const target = e.target;
 			if (!target.hasName('element')) return;
 			drawGuides([]);
+			if (dropFrameId) {
+				const frameId = dropFrameId;
+				dropFrameId = null;
+				showDropTarget(null);
+				const img = findEl(page, target.id());
+				if (img?.type === 'image') {
+					editor.fillFrame(
+						frameId,
+						{
+							src: img.src,
+							assetId: img.assetId,
+							naturalWidth: img.naturalWidth,
+							naturalHeight: img.naturalHeight
+						},
+						img.id
+					);
+					return;
+				}
+			}
 			const nodes = tr.nodes().includes(target) ? tr.nodes() : [target];
 			const i = index;
 			editor.update((d) => {
@@ -419,6 +555,19 @@
 					if (el.type === 'text') {
 						if (corner && anchor !== 'rotater') scaleSize(el, sx);
 						else el.width = n.width() * sx;
+					} else if (el.type === 'frame') {
+						el.width *= sx;
+						el.height *= sy;
+						// Keep the photo undistorted: re-fit its crop to the new shape.
+						if (el.image) {
+							const sc = frameScreen(el);
+							el.image.crop = refitCrop(
+								el.image.crop,
+								el.image.naturalWidth,
+								el.image.naturalHeight,
+								sc.width / sc.height
+							);
+						}
 					} else if (el.type === 'group' || (corner && el.type !== 'shape' && el.type !== 'line')) {
 						scaleSize(el, sx);
 					} else {
@@ -448,7 +597,15 @@
 	}
 </script>
 
-<div class="relative" style:width="{W * editor.zoom}px" style:height="{H * editor.zoom}px">
+<div
+	class="relative"
+	style:width="{W * editor.zoom}px"
+	style:height="{H * editor.zoom}px"
+	role="presentation"
+	ondragover={onDragOver}
+	ondragleave={() => showDropTarget(null)}
+	ondrop={onDrop}
+>
 	<div bind:this={container}></div>
 	{#if editingText}
 		{#key editingText.id}

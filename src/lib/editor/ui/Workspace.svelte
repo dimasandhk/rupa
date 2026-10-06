@@ -200,7 +200,7 @@
 						? 'ring-2 ring-brand/70 ring-offset-4 ring-offset-canvas'
 						: ''}"
 				>
-					<PageCanvas index={i} {oncontextmenu} />
+					<PageCanvas index={i} {oncontextmenu} {onerror} />
 				</div>
 			</section>
 		{/each}

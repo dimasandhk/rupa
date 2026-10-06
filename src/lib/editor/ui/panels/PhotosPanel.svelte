@@ -2,7 +2,8 @@
 	import { LoaderCircle, Search } from '#lib/icons.ts';
 	import { loadImage } from '../../canvas/images';
 	import { getEditor } from '../../context';
-	import { addImage } from '../../insert';
+	import { addImage, startImageDrag } from '../../insert';
+	import type { FramePhoto } from '../../state/editor.svelte';
 
 	let { onerror }: { onerror: (m: string) => void } = $props();
 	const editor = getEditor();
@@ -51,20 +52,26 @@
 		}
 	}
 
+	/** Import a stock photo into storage (Unsplash is hotlinked) and measure it. */
+	async function resolve(p: Photo): Promise<FramePhoto> {
+		const res = await fetch('/api/stock/use', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ provider: p.provider, id: p.id })
+		});
+		if (!res.ok)
+			throw new Error((await res.json().catch(() => ({}))).message ?? 'Could not add photo');
+		const { url } = await res.json();
+		const src = url ?? p.url!;
+		const img = await loadImage(src);
+		return { src, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight };
+	}
+
 	async function add(p: Photo) {
 		adding = p.id;
 		try {
-			const res = await fetch('/api/stock/use', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ provider: p.provider, id: p.id })
-			});
-			if (!res.ok)
-				throw new Error((await res.json().catch(() => ({}))).message ?? 'Could not add photo');
-			const { url } = await res.json();
-			const src = url ?? p.url!;
-			const img = await loadImage(src);
-			addImage(editor, src, img.naturalWidth, img.naturalHeight);
+			const photo = await resolve(p);
+			addImage(editor, photo.src, photo.naturalWidth, photo.naturalHeight);
 		} catch (e) {
 			onerror((e as Error).message);
 		} finally {
@@ -96,6 +103,8 @@
 				style:aspect-ratio="{p.width}/{p.height}"
 				disabled={!!adding}
 				onclick={() => add(p)}
+				draggable="true"
+				ondragstart={(e) => startImageDrag(e, () => resolve(p))}
 			>
 				<img src={p.thumb} alt="" class="size-full object-cover" loading="lazy" />
 				{#if adding === p.id}

@@ -39,6 +39,13 @@
 			label: els.some((e) => !e.locked) ? 'Lock' : 'Unlock',
 			run: () => editor.toggleLock()
 		});
+		if (single?.type === 'frame' && single.image) {
+			const id = single.id;
+			list.push(
+				{ label: 'Adjust photo', run: () => editor.startCrop(id) },
+				{ label: 'Detach image', run: () => editor.detachFrameImage(id) }
+			);
+		}
 		if (single?.type === 'image') {
 			const el = single;
 			list.push({

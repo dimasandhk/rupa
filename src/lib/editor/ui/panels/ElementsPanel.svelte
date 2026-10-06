@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { LoaderCircle, Search } from '#lib/icons.ts';
-	import { svgToDataUrl } from '../../canvas/images';
 	import { POLYGONS, PATHS, SHAPE_LABELS } from '../../canvas/shapes';
 	import { getEditor } from '../../context';
-	import { addIcon, addLine, addShape } from '../../insert';
+	import { addLine, addShape } from '../../insert';
 	import type { ShapeKind } from '../../model/types';
+	import FramesSection from './FramesSection.svelte';
+	import IconLibrary from './IconLibrary.svelte';
 
 	const editor = getEditor();
 	const SHAPES = Object.keys(SHAPE_LABELS) as ShapeKind[];
@@ -20,78 +20,6 @@
 			coords.push(`${6 + pts[i] * 88},${6 + pts[i + 1] * 88}`);
 		return `<polygon points="${coords.join(' ')}"/>`;
 	}
-
-	// ---- Icons via the Iconify API (100k+ open-source icons, no key needed).
-	// Icon data is fetched in bulk per icon set (one request per prefix, not per
-	// icon) and turned into SVG locally, which keeps us well under rate limits.
-	interface Graphic {
-		name: string;
-		svg: string;
-	}
-	interface IconSet {
-		width?: number;
-		height?: number;
-		icons: Record<
-			string,
-			{ body: string; width?: number; height?: number; left?: number; top?: number }
-		>;
-		aliases?: Record<string, { parent: string }>;
-	}
-
-	let query = $state('');
-	let icons = $state<Graphic[]>([]);
-	let loading = $state(false);
-	let error = $state('');
-	const API = 'https://api.iconify.design';
-	const COLLECTIONS = 'mdi,ph,tabler,lucide,fluent-emoji-flat,noto,twemoji,logos';
-
-	function toSvg(set: IconSet, name: string): string | undefined {
-		const icon = set.icons[name] ?? set.icons[set.aliases?.[name]?.parent ?? ''];
-		if (!icon) return;
-		const w = icon.width ?? set.width ?? 16;
-		const h = icon.height ?? set.height ?? 16;
-		return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="${icon.left ?? 0} ${icon.top ?? 0} ${w} ${h}">${icon.body}</svg>`;
-	}
-
-	async function search(q: string) {
-		if (!q.trim()) return;
-		loading = true;
-		error = '';
-		try {
-			const res = await fetch(
-				`${API}/search?query=${encodeURIComponent(q.trim())}&limit=64&prefixes=${COLLECTIONS}`
-			);
-			const names: string[] = (await res.json()).icons ?? [];
-			const byPrefix = new Map<string, string[]>();
-			for (const full of names) {
-				const [prefix, name] = full.split(':');
-				byPrefix.set(prefix, [...(byPrefix.get(prefix) ?? []), name]);
-			}
-			const sets = new Map<string, IconSet>();
-			await Promise.all(
-				[...byPrefix].map(async ([prefix, list]) => {
-					const r = await fetch(`${API}/${prefix}.json?icons=${list.join(',')}`);
-					if (r.ok) sets.set(prefix, await r.json());
-				})
-			);
-			icons = names.flatMap((full) => {
-				const [prefix, name] = full.split(':');
-				const set = sets.get(prefix);
-				const svg = set && toSvg(set, name);
-				return svg ? [{ name: full, svg }] : [];
-			});
-			if (!icons.length)
-				error = names.length ? 'The icon library is busy. Try again shortly.' : 'No graphics found';
-		} catch {
-			error = 'Could not reach the icon library';
-		} finally {
-			loading = false;
-		}
-	}
-
-	$effect(() => {
-		search('star');
-	});
 </script>
 
 <div class="space-y-5">
@@ -109,6 +37,11 @@
 				</button>
 			{/each}
 		</div>
+	</section>
+
+	<section>
+		<div class="panel-title">Frames</div>
+		<FramesSection />
 	</section>
 
 	<section>
@@ -146,39 +79,6 @@
 
 	<section>
 		<div class="panel-title">Graphics</div>
-		<form
-			class="relative mb-2"
-			onsubmit={(e) => {
-				e.preventDefault();
-				search(query);
-			}}
-		>
-			<Search class="pointer-events-none absolute top-2.5 left-3 size-4 text-muted" />
-			<input bind:value={query} placeholder="Search icons & stickers" class="input pl-9" />
-		</form>
-		{#if loading}
-			<div class="grid place-items-center py-6">
-				<LoaderCircle class="size-5 animate-spin text-muted" />
-			</div>
-		{:else if error}
-			<p class="py-4 text-center text-sm text-muted">{error}</p>
-		{:else}
-			<div class="grid grid-cols-4 gap-2">
-				{#each icons as icon (icon.name)}
-					<button
-						class="grid aspect-square place-items-center rounded-lg p-2 transition hover:bg-gray-100 active:scale-95"
-						title={icon.name}
-						onclick={() => addIcon(editor, icon.svg)}
-					>
-						<img
-							src={svgToDataUrl(icon.svg, '#1f1b17')}
-							alt={icon.name.split(':')[1].replaceAll('-', ' ')}
-							class="size-10"
-						/>
-					</button>
-				{/each}
-			</div>
-			<p class="mt-2 text-[11px] text-muted">Icons from Iconify (open-source licenses).</p>
-		{/if}
+		<IconLibrary />
 	</section>
 </div>

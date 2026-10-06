@@ -121,6 +121,47 @@ const icon = z.object({
 	color
 });
 
+const crop = z.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() });
+
+const frame = z.object({
+	...base,
+	type: z.literal('frame'),
+	frame: z.enum([
+		'square',
+		'rounded',
+		'circle',
+		'arch',
+		'triangle',
+		'diamond',
+		'hexagon',
+		'star',
+		'burst',
+		'heart',
+		'arrow',
+		'scallop',
+		'blob',
+		'leaf',
+		'parallelogram',
+		'polaroid',
+		'film',
+		'phone',
+		'tablet',
+		'laptop',
+		'browser',
+		'letter'
+	]),
+	char: z.string().max(2).optional(),
+	image: z
+		.object({
+			src: z.string().max(4096),
+			assetId: z.string().optional(),
+			naturalWidth: z.number().positive(),
+			naturalHeight: z.number().positive(),
+			crop
+		})
+		.optional()
+});
+
 export const elementSchema: z.ZodType<Element> = z.lazy(() =>
 	z.discriminatedUnion('type', [
 		text,
@@ -128,6 +169,7 @@ export const elementSchema: z.ZodType<Element> = z.lazy(() =>
 		shape,
 		line,
 		icon,
+		frame,
 		z.object({ ...base, type: z.literal('group'), children: z.array(elementSchema) })
 	])
 );

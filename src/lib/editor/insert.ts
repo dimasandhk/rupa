@@ -1,8 +1,16 @@
-import { uploadImage } from '#lib/api.ts';
+import { uploadImage, type UploadedImage } from '#lib/api.ts';
 import { ensureFont } from './canvas/fonts';
-import { createIcon, createImage, createLine, createShape, createText } from './model/factory';
-import type { Fill, ShapeKind, TextElement } from './model/types';
-import type { Editor } from './state/editor.svelte';
+import {
+	createFrame,
+	createIcon,
+	createImage,
+	createLine,
+	createShape,
+	createText
+} from './model/factory';
+import { FRAMES } from './model/frames';
+import type { Fill, FrameKind, ShapeKind, TextElement } from './model/types';
+import type { Editor, FramePhoto } from './state/editor.svelte';
 
 export interface TextPreset {
 	label: string;
@@ -52,19 +60,72 @@ export function addLine(
 	]);
 }
 
+/**
+ * Place a photo. If a frame is selected, the photo goes into the frame
+ * instead (Canva-style "click a photo to fill the selected frame").
+ */
 export function addImage(
 	editor: Editor,
 	src: string,
 	width: number,
 	height: number,
-	assetId?: string
+	assetId?: string,
+	at?: { x: number; y: number }
 ) {
-	editor.addElements([createImage(src, width, height, { assetId })]);
+	const sel = editor.selectedElements;
+	if (!at && sel.length === 1 && sel[0].type === 'frame' && !sel[0].locked) {
+		editor.fillFrame(sel[0].id, { src, assetId, naturalWidth: width, naturalHeight: height });
+		return;
+	}
+	editor.addElements(
+		[createImage(src, width, height, { assetId })],
+		at ? { at } : { center: true }
+	);
 }
 
-export function addIcon(editor: Editor, svg: string) {
+export function addIcon(editor: Editor, svg: string, name?: string) {
 	const size = Math.min(editor.data.width, editor.data.height) * 0.25;
-	editor.addElements([createIcon(svg, { width: size, height: size })]);
+	editor.addElements([createIcon(svg, { width: size, height: size, name })]);
+}
+
+export function addFrame(editor: Editor, kind: FrameKind, char?: string) {
+	const def = FRAMES[kind];
+	const side = Math.min(editor.data.width, editor.data.height) * 0.42;
+	const width = def.aspect >= 1 ? side : side * def.aspect;
+	const height = def.aspect >= 1 ? side / def.aspect : side;
+	editor.addElements([createFrame(kind, { width, height, char })]);
+}
+
+// ---- Drag & drop from side panels onto the canvas.
+// The drag carries a marker type; the photo itself is resolved on drop
+// (stock photos are only imported into storage once actually used).
+
+export const DRAG_IMAGE_TYPE = 'application/x-rupa-image';
+let pendingDrag: (() => Promise<FramePhoto>) | undefined;
+
+export function startImageDrag(e: DragEvent, resolve: () => Promise<FramePhoto>) {
+	pendingDrag = resolve;
+	e.dataTransfer?.setData(DRAG_IMAGE_TYPE, '1');
+	if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
+}
+
+export function takeImageDrag(): (() => Promise<FramePhoto>) | undefined {
+	const r = pendingDrag;
+	pendingDrag = undefined;
+	return r;
+}
+
+/** Upload a local image file to storage; returns it ready to place or put in a frame. */
+export async function uploadImageFile(file: File): Promise<FramePhoto & { upload: UploadedImage }> {
+	const size = await imageSize(file);
+	const up = await uploadImage(file, size);
+	return {
+		src: up.url,
+		assetId: up.id,
+		naturalWidth: size.width,
+		naturalHeight: size.height,
+		upload: up
+	};
 }
 
 export async function imageSize(blob: Blob) {
@@ -76,10 +137,9 @@ export async function imageSize(blob: Blob) {
 
 /** Upload a local file and place it on the active page. */
 export async function addImageFile(editor: Editor, file: File) {
-	const size = await imageSize(file);
-	const up = await uploadImage(file, size);
-	addImage(editor, up.url, size.width, size.height, up.id);
-	return up;
+	const photo = await uploadImageFile(file);
+	addImage(editor, photo.src, photo.naturalWidth, photo.naturalHeight, photo.assetId);
+	return photo.upload;
 }
 
 export function setBackgroundColor(editor: Editor, color: Fill) {

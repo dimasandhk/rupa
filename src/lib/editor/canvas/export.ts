@@ -1,5 +1,6 @@
 import Konva from 'konva';
 import type { DesignData, Element } from '../model/types';
+import { LETTER_FONT } from '../model/frames';
 import { ensureFont } from './fonts';
 import { svgToDataUrl, waitForImages } from './images';
 import { PageRenderer } from './renderer';
@@ -9,7 +10,10 @@ function collect(els: Element[], srcs: string[], fonts: Promise<boolean>[]) {
 		if (el.type === 'image') srcs.push(el.src);
 		else if (el.type === 'icon') srcs.push(svgToDataUrl(el.svg, el.color));
 		else if (el.type === 'text') fonts.push(ensureFont(el.fontFamily, el.fontWeight, el.italic));
-		else if (el.type === 'group') collect(el.children, srcs, fonts);
+		else if (el.type === 'frame') {
+			if (el.image) srcs.push(el.image.src);
+			if (el.frame === 'letter') fonts.push(ensureFont(LETTER_FONT, 400));
+		} else if (el.type === 'group') collect(el.children, srcs, fonts);
 	}
 }
 

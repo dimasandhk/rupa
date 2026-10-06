@@ -3,8 +3,9 @@ import { align, distribute, reorder, type Alignment, type ZOrder } from '../comm
 import { group, ungroup } from '../commands/group';
 import { addPage, deletePage, duplicatePage, movePage } from '../commands/pages';
 import { resizeDesign } from '../commands/scale';
-import { cloneWithNewIds, deepClone, newId } from '../model/factory';
-import { elementBounds, unionBounds } from '../model/geometry';
+import { cloneWithNewIds, createImage, deepClone, newId } from '../model/factory';
+import { coverCrop, frameScreen } from '../model/frames';
+import { elementBounds, rotate, unionBounds } from '../model/geometry';
 import type { DesignData, Element, Page } from '../model/types';
 import { History } from './history';
 
@@ -21,6 +22,14 @@ interface UpdateOptions {
 const CLIPBOARD_MARKER = 'dim-canva/elements';
 
 export type EditorLayout = 'scroll' | 'slides';
+
+/** A photo about to go into a frame. */
+export interface FramePhoto {
+	src: string;
+	assetId?: string;
+	naturalWidth: number;
+	naturalHeight: number;
+}
 
 /** Landscape 16:9 and 4:3 designs are presentations: show them slide by slide. */
 export function defaultLayout(data: { width: number; height: number }): EditorLayout {
@@ -190,7 +199,8 @@ export class Editor {
 
 	startCrop(id: string) {
 		const el = this.activePage.elements.find((e) => e.id === id);
-		if (el?.type !== 'image' || el.locked) return;
+		const croppable = el?.type === 'image' || (el?.type === 'frame' && !!el.image);
+		if (!el || !croppable || el.locked) return;
 		this.editingTextId = null;
 		this.selectedIds = [id];
 		this.cropApply = true;
@@ -221,19 +231,70 @@ export class Editor {
 	 * Add elements to the active page. Elements without an explicit position are
 	 * scaled to fit and centered, like dropping something from Canva's side panel.
 	 */
-	addElements(els: Element[], opts: { center?: boolean } = { center: true }) {
+	addElements(
+		els: Element[],
+		opts: { center?: boolean; at?: { x: number; y: number } } = { center: true }
+	) {
 		const { width: W, height: H } = this.data;
 		const placed = els.map((el) => {
-			if (!opts.center) return el;
+			if (!opts.center && !opts.at) return el;
 			const s = Math.min(1, (W * 0.8) / el.width, (H * 0.8) / el.height);
 			const width = el.width * s;
 			const height = el.height * s;
-			return { ...el, width, height, x: (W - width) / 2, y: (H - height) / 2 };
+			// Centered on the page, or on a drop point.
+			const cx = opts.at?.x ?? W / 2;
+			const cy = opts.at?.y ?? H / 2;
+			return { ...el, width, height, x: cx - width / 2, y: cy - height / 2 };
 		});
 		this.updatePage((page) => {
 			page.elements.push(...placed);
 		});
 		this.selectedIds = placed.map((e) => e.id);
+	}
+
+	/**
+	 * Put a photo into a frame (cover-cropped). When the photo came from an
+	 * image element dragged onto the frame, that element is removed in the
+	 * same step, so a single undo restores both.
+	 */
+	fillFrame(frameId: string, photo: FramePhoto, consumeId?: string) {
+		this.updatePage((page) => {
+			const frame = page.elements.find((e) => e.id === frameId);
+			if (frame?.type !== 'frame') return;
+			const screen = frameScreen(frame);
+			frame.image = {
+				src: photo.src,
+				assetId: photo.assetId,
+				naturalWidth: photo.naturalWidth,
+				naturalHeight: photo.naturalHeight,
+				crop: coverCrop(photo.naturalWidth, photo.naturalHeight, screen.width, screen.height)
+			};
+			if (consumeId) page.elements = page.elements.filter((e) => e.id !== consumeId);
+		});
+		this.selectedIds = [frameId];
+	}
+
+	/** Pull a frame's photo out as a standalone image, leaving the frame empty. */
+	detachFrameImage(frameId: string) {
+		const frame = this.activePage.elements.find((e) => e.id === frameId);
+		if (frame?.type !== 'frame' || !frame.image) return;
+		const screen = frameScreen(frame);
+		const origin = rotate({ x: screen.x + 20, y: screen.y + 20 }, frame.rotation);
+		const img = createImage(frame.image.src, frame.image.naturalWidth, frame.image.naturalHeight, {
+			assetId: frame.image.assetId,
+			crop: { ...frame.image.crop },
+			x: frame.x + origin.x,
+			y: frame.y + origin.y,
+			width: screen.width,
+			height: screen.height,
+			rotation: frame.rotation
+		});
+		this.updatePage((page) => {
+			const f = page.elements.find((e) => e.id === frameId);
+			if (f?.type === 'frame') delete f.image;
+			page.elements.push(img);
+		});
+		this.selectedIds = [img.id];
 	}
 
 	deleteSelected() {

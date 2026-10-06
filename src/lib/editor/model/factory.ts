@@ -5,6 +5,8 @@ import type {
 	DesignData,
 	Element,
 	Fill,
+	FrameElement,
+	FrameKind,
 	IconElement,
 	ImageElement,
 	LineElement,
@@ -114,6 +116,10 @@ export function createImage(
 		},
 		...props
 	};
+}
+
+export function createFrame(frame: FrameKind, props: Partial<FrameElement> = {}): FrameElement {
+	return { ...base(props, 300, 300), type: 'frame', frame, ...props };
 }
 
 export function createIcon(svg: string, props: Partial<IconElement> = {}): IconElement {

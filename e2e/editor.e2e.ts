@@ -218,3 +218,100 @@ test('presentations open in slides view with a working filmstrip', async ({ page
 	await page.waitForFunction(() => '__editor' in window);
 	expect((await state()).layout).toBe('scroll');
 });
+
+test('drag a photo onto a frame and pick icons from more sources', async ({ page }) => {
+	await signUp(page);
+	await page
+		.getByRole('button', { name: /Instagram Post/ })
+		.first()
+		.click();
+	await page.waitForURL(/\/design\//);
+	await page.waitForFunction(() => '__editor' in window);
+
+	type El = {
+		id: string;
+		type: string;
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+		image?: unknown;
+		name?: string;
+	};
+	const elements = () =>
+		page.evaluate(() =>
+			(
+				window as unknown as { __editor: { activePage: { elements: El[] } } }
+			).__editor.activePage.elements.map((e) => ({ ...e }))
+		);
+
+	// Add a circle frame from the Elements panel.
+	await page.getByRole('button', { name: 'Circle frame' }).click();
+	await expect.poll(async () => (await elements()).map((e) => e.type)).toEqual(['frame']);
+
+	// Upload a test photo and place it beside the frame.
+	await page.evaluate(async () => {
+		const c = document.createElement('canvas');
+		c.width = 600;
+		c.height = 400;
+		const x = c.getContext('2d')!;
+		x.fillStyle = '#2e9e6b';
+		x.fillRect(0, 0, 600, 400);
+		x.fillStyle = '#c8102e';
+		x.fillRect(200, 100, 200, 200);
+		const blob = await new Promise<Blob>((r) => c.toBlob((b) => r(b!), 'image/png'));
+		const form = new FormData();
+		form.set('file', blob, 'test.png');
+		form.set('width', '600');
+		form.set('height', '400');
+		const up = await (await fetch('/api/uploads', { method: 'POST', body: form })).json();
+		const { addImage } = await import('/src/lib/editor/insert.ts');
+		const ed = (window as unknown as { __editor: { clearSelection(): void } }).__editor;
+		ed.clearSelection();
+		addImage(ed as never, up.url, 600, 400, up.id, { x: 830, y: 860 });
+	});
+	await expect.poll(async () => (await elements()).length).toBe(2);
+	await page.waitForTimeout(500);
+
+	// Drag the photo onto the frame: it snaps in and the loose image disappears.
+	const [frame, photo] = await elements();
+	const box = (await page.locator('[data-page-index="0"] canvas').first().boundingBox())!;
+	const zoom = await page.evaluate(
+		() => (window as unknown as { __editor: { zoom: number } }).__editor.zoom
+	);
+	const at = (x: number, y: number) => ({ x: box.x + x * zoom, y: box.y + y * zoom });
+	const from = at(photo.x + photo.width / 2, photo.y + photo.height / 2);
+	const to = at(frame.x + frame.width / 2, frame.y + frame.height / 2);
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 8 });
+	await page.mouse.move(to.x, to.y, { steps: 8 });
+	await page.mouse.up();
+	await expect
+		.poll(async () => (await elements()).map((e) => [e.type, !!e.image]))
+		.toEqual([['frame', true]]);
+
+	// Double-click enters "adjust photo"; Done applies.
+	// Let the canvas redraw its hit areas after the drop (a person can't click this fast).
+	await page.waitForTimeout(300);
+	await page.mouse.dblclick(to.x, to.y);
+	await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
+	await page.getByRole('button', { name: 'Done' }).click();
+
+	// Undo (the adjustment, then the fill) puts the loose photo back.
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Control+z');
+	await page.keyboard.press('Control+z');
+	await expect.poll(async () => (await elements()).length).toBe(2);
+
+	// Icon library: brand icons from open-source sets.
+	await page.getByRole('tab', { name: 'Brands' }).click();
+	await page.getByPlaceholder('Search icons & stickers').fill('github');
+	await page.getByPlaceholder('Search icons & stickers').press('Enter');
+	const first = page.locator('button[title*="github" i]').first();
+	await expect(first).toBeVisible({ timeout: 15_000 });
+	await first.click();
+	await expect
+		.poll(async () => (await elements()).find((e) => e.type === 'icon')?.name ?? '')
+		.toMatch(/github/i);
+});

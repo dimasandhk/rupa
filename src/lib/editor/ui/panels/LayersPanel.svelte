@@ -21,6 +21,8 @@
 				return 'Line';
 			case 'icon':
 				return 'Graphic';
+			case 'frame':
+				return el.image ? 'Frame' : 'Empty frame';
 			case 'group':
 				return `Group (${el.children.length})`;
 		}

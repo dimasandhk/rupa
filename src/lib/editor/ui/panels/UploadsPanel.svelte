@@ -2,7 +2,7 @@
 	import { CloudUpload, LoaderCircle } from '#lib/icons.ts';
 	import { listUploads, type UploadedImage } from '#lib/api.ts';
 	import { getEditor } from '../../context';
-	import { addImage, addImageFile } from '../../insert';
+	import { addImage, addImageFile, startImageDrag } from '../../insert';
 
 	let { onerror }: { onerror: (m: string) => void } = $props();
 	const editor = getEditor();
@@ -63,6 +63,14 @@
 				<button
 					class="mb-2 block w-full overflow-hidden rounded-lg bg-canvas hover:ring-2 hover:ring-brand"
 					onclick={() => addImage(editor, u.url, u.width ?? 800, u.height ?? 800, u.id)}
+					draggable="true"
+					ondragstart={(e) =>
+						startImageDrag(e, async () => ({
+							src: u.url,
+							assetId: u.id,
+							naturalWidth: u.width ?? 800,
+							naturalHeight: u.height ?? 800
+						}))}
 				>
 					<img src={u.url} alt="" class="w-full" loading="lazy" />
 				</button>
