@@ -38,6 +38,9 @@
 	let veilEl = $state<HTMLDivElement>();
 	let running: Animation[] = [];
 	let navToken = 0;
+	/** Index the front layer is actually showing (`index` leads it while navigating). */
+	let shown = -1;
+	let navigating = false;
 
 	function settle() {
 		for (const a of running) a.cancel();
@@ -50,34 +53,52 @@
 		if (!viewW) return;
 		const i = index;
 		slide(i).then((src) => {
-			if (!running.length) frontSrc = src;
+			if (navigating) return;
+			frontSrc = src;
+			shown = i;
 		});
 	});
 
-	async function navigate(to: number) {
-		to = Math.max(0, Math.min(count - 1, to));
-		const from = index;
-		if (to === from) return;
+	async function navigate(target: number) {
+		const to = Math.max(0, Math.min(count - 1, target));
+		if (to === index) return;
+		const from = shown < 0 ? index : shown;
 		const token = ++navToken;
+		navigating = true;
 		index = to;
 		const reverse = to < from;
 		const t = data.data.pages[reverse ? from : to].transition;
 		const src = await slide(to);
 		if (token !== navToken) return;
 		settle();
-		if (!t || t.type === 'none' || Math.abs(to - from) !== 1 || !frontSrc) {
+		const animate = t && t.type !== 'none' && Math.abs(to - from) === 1 && frontSrc && shown >= 0;
+		if (!animate) {
 			frontSrc = src;
+			shown = to;
+			navigating = false;
 			return;
 		}
 		backSrc = frontSrc;
 		frontSrc = src;
+		shown = to;
 		await tick();
+		if (token !== navToken) return;
+		if (!frontEl || !backEl || !veilEl) {
+			navigating = false;
+			return;
+		}
+		// Keep the new slide hidden until both images are decoded, or it pops in un-animated.
+		frontEl.style.visibility = 'hidden';
+		await Promise.all([frontEl.decode(), backEl.decode()]).catch(() => {});
 		if (token !== navToken || !frontEl || !backEl || !veilEl) return;
+		frontEl.style.visibility = '';
 		running = playTransition(t, { incoming: frontEl, outgoing: backEl, veil: veilEl }, reverse);
-		Promise.all(running.map((a) => a.finished)).then(
-			() => token === navToken && settle(),
-			() => {}
-		);
+		const done = () => {
+			if (token !== navToken) return;
+			settle();
+			navigating = false;
+		};
+		Promise.all(running.map((a) => a.finished)).then(done, done);
 	}
 
 	// Pre-render the next slide so advancing is instant.
