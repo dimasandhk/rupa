@@ -14,6 +14,9 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white" />
   <img alt="Postgres" src="https://img.shields.io/badge/Postgres-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Konva" src="https://img.shields.io/badge/Konva-0D83CD?logoColor=white" />
+  <img alt="S3-compatible storage" src="https://img.shields.io/badge/S3--compatible-569A31?logo=amazons3&logoColor=white" />
+  <img alt="RustFS" src="https://img.shields.io/badge/RustFS-DEA584?logoColor=white" />
   <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" />
 </p>
 
@@ -31,13 +34,13 @@ Rupa is a self-hostable, Canva-style design editor built with SvelteKit (Svelte 
 
 ## Stack
 
-|        |                                                                                                  |
-| ------ | ------------------------------------------------------------------------------------------------ |
-| App    | SvelteKit 3, Svelte 5 runes, TypeScript, Tailwind v4, bits-ui                                    |
-| Canvas | Konva, driven by a JSON document model (`src/lib/editor/model`) with patch-based undo (mutative) |
-| Data   | Postgres + Drizzle ORM, Better Auth                                                              |
-| Files  | Any S3-compatible storage (RustFS locally), served through the app at `/files/*`                 |
-| Deploy | Docker image + Caddy reverse proxy (automatic HTTPS)                                             |
+|        |                                                                                                     |
+| ------ | --------------------------------------------------------------------------------------------------- |
+| App    | SvelteKit 3, Svelte 5 runes, TypeScript, Tailwind v4, bits-ui                                       |
+| Canvas | Konva, driven by a JSON document model (`src/lib/editor/model`) with patch-based undo (mutative)    |
+| Data   | Postgres + Drizzle ORM, Better Auth                                                                 |
+| Files  | Any S3-compatible storage via the AWS SDK v3 (RustFS locally), served through the app at `/files/*` |
+| Deploy | Docker image + Caddy reverse proxy (automatic HTTPS)                                                |
 
 ## Contents
 
