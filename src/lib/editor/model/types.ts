@@ -33,6 +33,30 @@ export interface PageBackground {
 	image?: { src: string; assetId?: string };
 }
 
+export const TRANSITION_TYPES = [
+	'none',
+	'fade',
+	'slide',
+	'circle',
+	'colorwipe',
+	'linewipe',
+	'flow',
+	'stack'
+] as const;
+export type TransitionType = (typeof TRANSITION_TYPES)[number];
+
+export const TRANSITION_DIRECTIONS = ['left', 'right', 'up', 'down'] as const;
+/** Direction the content travels, e.g. `left` brings the next slide in from the right. */
+export type TransitionDirection = (typeof TRANSITION_DIRECTIONS)[number];
+
+/** How a slide appears when presenting; played when moving onto this page. */
+export interface PageTransition {
+	type: TransitionType;
+	/** Seconds. */
+	duration: number;
+	direction: TransitionDirection;
+}
+
 export interface Page {
 	id: string;
 	/** Optional name shown in the slide filmstrip ("3 - Problem"). */
@@ -40,6 +64,7 @@ export interface Page {
 	background: PageBackground;
 	elements: Element[];
 	notes?: string;
+	transition?: PageTransition;
 }
 
 export interface BaseElement {

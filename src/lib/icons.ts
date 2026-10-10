@@ -69,6 +69,7 @@ export { default as Strikethrough } from 'phosphor-svelte/lib/TextStrikethroughI
 export { default as Trash2 } from 'phosphor-svelte/lib/TrashIcon';
 export { default as Type } from 'phosphor-svelte/lib/TextTIcon';
 export { default as Underline } from 'phosphor-svelte/lib/TextUnderlineIcon';
+export { default as Transition } from 'phosphor-svelte/lib/ArrowsLeftRightIcon';
 export { default as Undo2 } from 'phosphor-svelte/lib/ArrowUUpLeftIcon';
 export { default as UnfoldVertical } from 'phosphor-svelte/lib/ArrowsVerticalIcon';
 export { default as Ungroup } from 'phosphor-svelte/lib/SelectionSlashIcon';

@@ -7,12 +7,15 @@
 		MoreHorizontal,
 		Pencil,
 		Plus,
-		Trash2
+		Trash2,
+		Transition
 	} from '#lib/icons.ts';
 	import { DropdownMenu } from 'bits-ui';
 	import { tick } from 'svelte';
 	import { getEditor } from '../context';
 	import SlideThumb from './SlideThumb.svelte';
+	import TransitionPicker from './TransitionPicker.svelte';
+	import Pop from './widgets/Pop.svelte';
 
 	const editor = getEditor();
 	const THUMB_H = 64;
@@ -88,6 +91,27 @@
 				}}
 				ondragend={() => (dragFrom = dragOver = null)}
 			>
+				{#if i > 0}
+					<Pop
+						title="Transition into slide {i + 1}"
+						width={300}
+						align="center"
+						triggerClass="absolute top-[22px] -left-[17px] z-10 grid size-5 place-items-center rounded-full bg-white shadow-soft ring-1 ring-line transition hover:text-brand data-[state=open]:opacity-100 {page.transition
+							? 'text-brand'
+							: 'text-muted opacity-0 group-hover/slide:opacity-100 focus:opacity-100'}"
+					>
+						{#snippet trigger()}<Transition class="size-3" weight="bold" />{/snippet}
+						<TransitionPicker
+							value={page.transition}
+							onchange={(t) => editor.setTransition([i], t)}
+							onapplyall={(t) =>
+								editor.setTransition(
+									pages.map((_, n) => n).filter((n) => n > 0),
+									t
+								)}
+						/>
+					</Pop>
+				{/if}
 				<button
 					class="block w-full overflow-hidden rounded-lg bg-white shadow-soft ring-offset-2 ring-offset-paper transition duration-200 ease-(--ease-spring) hover:-translate-y-0.5 {active
 						? 'ring-2 ring-brand'
