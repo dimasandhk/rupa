@@ -1,9 +1,29 @@
-# Rupa
+<p align="center">
+  <img src="docs/logo.svg" alt="Rupa logo" width="96" height="96" />
+</p>
 
-A self-hostable, Canva-style design editor built with SvelteKit (Svelte 5) and Konva.
+<h1 align="center">Rupa</h1>
+
+<p align="center">
+  A self-hostable, Canva-style design editor for the browser.<br />
+  Drag-and-drop canvas, templates, slides with page transitions, and export to PNG, JPG or PDF.
+</p>
+
+<p align="center">
+  <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white" />
+  <img alt="Postgres" src="https://img.shields.io/badge/Postgres-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" />
+</p>
+
+## About
+
+Rupa is a self-hostable, Canva-style design editor built with SvelteKit (Svelte 5) and Konva.
 
 - **Editor:** text with 1,500+ web fonts and effects, shapes, lines, icons (Iconify), photos with filters, cropping, rounded corners and borders, snapping guides, multi-select, group/ungroup, align/distribute, layers, lock, copy/paste, undo/redo, keyboard shortcuts, right-click menu.
-- **Pages & presenting:** multi-page designs, page grid view, fullscreen present mode, resize to other formats.
+- **Pages & presenting:** multi-page designs, slide filmstrip and page grid view, fullscreen present mode, resize to other formats.
+- **Page transitions:** per-slide fade, slide, circle/color/line wipe, flow and stack transitions with adjustable duration and direction, played in present mode.
 - **Assets:** starter templates, uploads, stock photos (Unsplash or Pexels with an API key, Wikimedia Commons without one).
 - **Export:** PNG (optionally transparent), JPG, multi-page PDF, or a zip of PNGs.
 - **AI background remover:** runs free in the browser by default; can use fal.ai instead.
@@ -18,6 +38,10 @@ A self-hostable, Canva-style design editor built with SvelteKit (Svelte 5) and K
 | Data   | Postgres + Drizzle ORM, Better Auth                                                              |
 | Files  | Any S3-compatible storage (RustFS locally), served through the app at `/files/*`                 |
 | Deploy | Docker image + Caddy reverse proxy (automatic HTTPS)                                             |
+
+## Contents
+
+[Stack](#stack) · [Local development](#local-development) · [Self-hosting](#self-hosting) · [Configuration](#configuration) · [Project layout](#project-layout)
 
 ## Local development
 
@@ -70,10 +94,11 @@ src/lib/editor/
   model/       document types, zod schema, factories, geometry
   commands/    pure editing operations (align, group, pages, resize) — unit tested
   state/       Editor store (undo/redo, selection), autosave
-  canvas/      Konva renderer, page canvas, text editing, crop, export
+  canvas/      Konva renderer, page canvas, text editing, crop, export, page transitions
   ui/          shell, toolbars, side panels, dialogs
 src/lib/server/  db, auth, storage, stock photos, design persistence
 src/routes/      dashboard, login, editor, present, JSON API
 scripts/         seed + starter templates
+docs/            README assets (logo)
 e2e/             Playwright tests
 ```

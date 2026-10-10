@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+	<title>Rupa</title>
+	<rect width="64" height="64" rx="16" fill="#c2553a" />
+	<circle cx="44" cy="20" r="9" fill="#f6f2eb" opacity="0.9" />
+	<path d="M18 50V16h12.5c7 0 11.5 4 11.5 10.2 0 4.6-2.5 8-6.6 9.4L44 50h-8.2l-7.6-13.6H25.6V50Zm7.6-20h4.3c3.3 0 4.9-1.4 4.9-3.9s-1.6-3.9-4.9-3.9h-4.3Z" fill="#1f1b17" />
+</svg>
