@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRANSITION_DIRECTIONS, TRANSITION_TYPES } from './types';
 import type { DesignData, Element } from './types';
 
 const color = z.string().max(64);
@@ -187,7 +188,14 @@ export const designDataSchema: z.ZodType<DesignData> = z.object({
 					image: z.object({ src: z.string().max(4096), assetId: z.string().optional() }).optional()
 				}),
 				elements: z.array(elementSchema),
-				notes: z.string().max(20_000).optional()
+				notes: z.string().max(20_000).optional(),
+				transition: z
+					.object({
+						type: z.enum(TRANSITION_TYPES),
+						duration: z.number().min(0.1).max(3),
+						direction: z.enum(TRANSITION_DIRECTIONS)
+					})
+					.optional()
 			})
 		)
 		.min(1)

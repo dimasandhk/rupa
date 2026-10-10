@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { tick } from 'svelte';
+	import { playTransition } from '#lib/editor/canvas/transitions.ts';
 	import { renderPage } from '#lib/editor/canvas/export.ts';
 	import { ChevronLeft, ChevronRight, Maximize, X } from '#lib/icons.ts';
 	import type { PageProps } from './$types';
@@ -28,12 +30,62 @@
 		return p;
 	}
 
+	// Two stacked layers: `front` is the current slide, `back` the one leaving during a transition.
+	let frontSrc = $state('');
+	let backSrc = $state('');
+	let frontEl = $state<HTMLImageElement>();
+	let backEl = $state<HTMLImageElement>();
+	let veilEl = $state<HTMLDivElement>();
+	let running: Animation[] = [];
+	let navToken = 0;
+
+	function settle() {
+		for (const a of running) a.cancel();
+		running = [];
+		backSrc = '';
+	}
+
+	// (Re)paint the current slide, e.g. on first load or when the window is resized.
+	$effect(() => {
+		if (!viewW) return;
+		const i = index;
+		slide(i).then((src) => {
+			if (!running.length) frontSrc = src;
+		});
+	});
+
+	async function navigate(to: number) {
+		to = Math.max(0, Math.min(count - 1, to));
+		const from = index;
+		if (to === from) return;
+		const token = ++navToken;
+		index = to;
+		const reverse = to < from;
+		const t = data.data.pages[reverse ? from : to].transition;
+		const src = await slide(to);
+		if (token !== navToken) return;
+		settle();
+		if (!t || t.type === 'none' || Math.abs(to - from) !== 1 || !frontSrc) {
+			frontSrc = src;
+			return;
+		}
+		backSrc = frontSrc;
+		frontSrc = src;
+		await tick();
+		if (token !== navToken || !frontEl || !backEl || !veilEl) return;
+		running = playTransition(t, { incoming: frontEl, outgoing: backEl, veil: veilEl }, reverse);
+		Promise.all(running.map((a) => a.finished)).then(
+			() => token === navToken && settle(),
+			() => {}
+		);
+	}
+
 	// Pre-render the next slide so advancing is instant.
 	$effect(() => {
 		if (viewW && index + 1 < count) slide(index + 1);
 	});
 
-	const go = (d: number) => (index = Math.max(0, Math.min(count - 1, index + d)));
+	const go = (d: number) => navigate(index + d);
 	const exit = () => {
 		if (document.fullscreenElement) document.exitFullscreen();
 		goto(`/design/${data.id}`);
@@ -43,8 +95,8 @@
 	function onKey(e: KeyboardEvent) {
 		if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) go(1);
 		else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) go(-1);
-		else if (e.key === 'Home') index = 0;
-		else if (e.key === 'End') index = count - 1;
+		else if (e.key === 'Home') navigate(0);
+		else if (e.key === 'End') navigate(count - 1);
 		else if (e.key === 'f') fullscreen();
 		else if (e.key === 'Escape' && !document.fullscreenElement) exit();
 		else return;
@@ -70,15 +122,31 @@
 	onclick={(e) => go(e.clientX < viewW / 3 ? -1 : 1)}
 >
 	{#if viewW}
-		{#await slide(index) then src}
-			<img
-				{src}
-				alt="Slide {index + 1}"
-				style:width="{data.data.width * fit}px"
-				style:height="{data.data.height * fit}px"
-				draggable="false"
-			/>
-		{/await}
+		<div
+			class="relative overflow-hidden"
+			style:width="{data.data.width * fit}px"
+			style:height="{data.data.height * fit}px"
+		>
+			{#if backSrc}
+				<img
+					bind:this={backEl}
+					src={backSrc}
+					alt=""
+					class="absolute inset-0 size-full"
+					draggable="false"
+				/>
+			{/if}
+			{#if frontSrc}
+				<img
+					bind:this={frontEl}
+					src={frontSrc}
+					alt="Slide {index + 1}"
+					class="absolute inset-0 size-full"
+					draggable="false"
+				/>
+			{/if}
+			<div bind:this={veilEl} class="pointer-events-none absolute inset-0 bg-ink opacity-0"></div>
+		</div>
 	{/if}
 </div>
 

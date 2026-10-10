@@ -6,7 +6,7 @@ import { resizeDesign } from '../commands/scale';
 import { cloneWithNewIds, createImage, deepClone, newId } from '../model/factory';
 import { coverCrop, frameScreen } from '../model/frames';
 import { elementBounds, rotate, unionBounds } from '../model/geometry';
-import type { DesignData, Element, Page } from '../model/types';
+import type { DesignData, Element, Page, PageTransition } from '../model/types';
 import { History } from './history';
 
 interface UiSnapshot {
@@ -93,6 +93,18 @@ export class Editor {
 			if (!d.pages[index]) return;
 			if (t) d.pages[index].title = t;
 			else delete d.pages[index].title;
+		});
+	}
+
+	/** Set (or with `null` clear) the transition played when moving onto a page. */
+	setTransition(indexes: number[], transition: PageTransition | null) {
+		this.update((d) => {
+			for (const i of indexes) {
+				const page = d.pages[i];
+				if (!page) continue;
+				if (transition) page.transition = { ...transition };
+				else delete page.transition;
+			}
 		});
 	}
 
